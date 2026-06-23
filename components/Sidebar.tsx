@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Dumbbell,
   Building,
+  Wrench,
 } from "lucide-react";
 import BrandMark from "./BrandMark";
 
@@ -94,6 +95,7 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
           {LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
           {LinkItem("/properties", "Properties", Building)}
+          {LinkItem("/services", "Home Services", Wrench)}
           <div className="h-px bg-white/10 my-4 mx-2" />
           {LinkItem("/categories", "Categories", Folder)}
           {LinkItem("/products", "Supplements", Dumbbell)}
