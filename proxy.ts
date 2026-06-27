@@ -42,7 +42,11 @@ export function proxy(request: NextRequest) {
   const role = decodeRole(token);
   const allowed = role ? ROLE_ALLOWED_PREFIXES[role] : null;
 
-  if (allowed && !allowed.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+  if (
+    allowed &&
+    !allowed.includes("/") &&
+    !allowed.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  ) {
     return NextResponse.redirect(new URL(ROLE_HOME[role] || "/dashboard", request.url));
   }
 
