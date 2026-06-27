@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { getStoredAdminRole } from "@/lib/auth";
 
 export default function HomePage() {
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
 
     if (token) {
-      window.location.replace("/dashboard");
+      const role = getStoredAdminRole();
+      window.location.replace(
+        role === "SUB_ADMIN" ? "/inventory" : role === "PICKER" ? "/orders" : "/dashboard"
+      );
     } else {
       window.location.replace("/login");
     }

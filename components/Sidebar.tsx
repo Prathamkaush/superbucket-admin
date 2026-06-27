@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Folder,
@@ -22,8 +22,12 @@ import {
   Dumbbell,
   Building,
   Wrench,
+  UsersRound,
+  ClipboardList,
+  BarChart3,
 } from "lucide-react";
 import BrandMark from "./BrandMark";
+import { clearStoredAdmin, getStoredAdminRole } from "@/lib/auth";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -31,6 +35,13 @@ export default function Sidebar() {
 
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getStoredAdminRole());
+  }, []);
+
+  const canSee = (allowed: string[]) => Boolean(role && allowed.includes(role));
 
   const LinkItem = (href: string, label: string, Icon: React.ElementType) => (
     <Link
@@ -93,22 +104,25 @@ export default function Sidebar() {
 
         {/* MIDDLE: SCROLLABLE NAVIGATION */}
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
-          {LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
-          {LinkItem("/properties", "Properties", Building)}
-          {LinkItem("/services", "Home Services", Wrench)}
+          {canSee(["ADMIN"]) && LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
+          {canSee(["ADMIN"]) && LinkItem("/properties", "Properties", Building)}
+          {canSee(["ADMIN"]) && LinkItem("/services", "Home Services", Wrench)}
           <div className="h-px bg-white/10 my-4 mx-2" />
-          {LinkItem("/categories", "Categories", Folder)}
-          {LinkItem("/products", "Supplements", Dumbbell)}
-          {LinkItem("/orders", "Orders", ShoppingCart)}
-          {LinkItem("/homepage", "Edit Home", PenIcon)}
-          {LinkItem("/coupons", "Coupons", SplinePointer)}
-          {LinkItem("/feedback", "Feedback", MessageSquare)}
-          {LinkItem("/contacts", "Contacts", Phone)}
-          {LinkItem("/users", "Users", PersonStanding)}
-          {LinkItem("/discounts", "Discounts", Percent)}
-          {LinkItem("/trending", "Trending", Star)}
-          {LinkItem("/reviews", "Reviews", Star)}
-          {LinkItem("/settings", "Settings", Settings)}
+          {canSee(["ADMIN"]) && LinkItem("/categories", "Categories", Folder)}
+          {canSee(["ADMIN"]) && LinkItem("/products", "Supplements", Dumbbell)}
+          {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/inventory", "Inventory", ClipboardList)}
+          {canSee(["ADMIN", "PICKER"]) && LinkItem("/orders", "Orders", ShoppingCart)}
+          {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/staff", "Staff", UsersRound)}
+          {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/picker-reports", "Picker Reports", BarChart3)}
+          {canSee(["ADMIN"]) && LinkItem("/homepage", "Edit Home", PenIcon)}
+          {canSee(["ADMIN"]) && LinkItem("/coupons", "Coupons", SplinePointer)}
+          {canSee(["ADMIN"]) && LinkItem("/feedback", "Feedback", MessageSquare)}
+          {canSee(["ADMIN"]) && LinkItem("/contacts", "Contacts", Phone)}
+          {canSee(["ADMIN"]) && LinkItem("/users", "Users", PersonStanding)}
+          {canSee(["ADMIN"]) && LinkItem("/discounts", "Discounts", Percent)}
+          {canSee(["ADMIN"]) && LinkItem("/trending", "Trending", Star)}
+          {canSee(["ADMIN"]) && LinkItem("/reviews", "Reviews", Star)}
+          {canSee(["ADMIN"]) && LinkItem("/settings", "Settings", Settings)}
         </div>
 
         {/* BOTTOM: FIXED LOGOUT */}
@@ -142,9 +156,7 @@ export default function Sidebar() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
-                  localStorage.removeItem("admin_token");
-                  document.cookie =
-                    "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                  clearStoredAdmin();
                   router.push("/login");
                 }}
                 className="w-full py-4 bg-brandRed text-white text-[10px] font-black uppercase tracking-widest rounded transition-all hover:bg-white hover:text-brandBlack"

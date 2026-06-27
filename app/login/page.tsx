@@ -25,6 +25,7 @@ export default function AdminLoginPage() {
       const res = await api.post("/auth/admin/login", { email, password });
 
       localStorage.setItem("admin_token", res.data.token);
+      localStorage.setItem("admin_user", JSON.stringify(res.data.user));
       document.cookie = `admin_token=${res.data.token}; path=/;`;
 
       window.location.href = "/dashboard";

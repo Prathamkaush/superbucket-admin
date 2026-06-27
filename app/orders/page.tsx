@@ -96,6 +96,18 @@ export default function OrdersPage() {
       CANCELLED: "bg-red-600",
     }[s] || "bg-gray-400");
 
+  const updateOrderStatus = async (orderId: number, nextStatus: string) => {
+    await api.put(`/orders/${orderId}/status`, { status: nextStatus });
+    await fetchOrders();
+  };
+
+  const nextAction = (status: string) =>
+    ({
+      PENDING: { label: "Accept", status: "CONFIRMED" },
+      CONFIRMED: { label: "Dispatch", status: "SHIPPED" },
+      SHIPPED: { label: "Fulfill", status: "DELIVERED" },
+    }[status]);
+
   return (
     <AdminLayout>
       <div className="admin-page">
@@ -288,15 +300,30 @@ export default function OrdersPage() {
                   )}
                 </div>
 
-                <button
-                    className="mt-5 px-5 py-3 bg-brandRed text-white rounded-md hover:bg-brandBlack text-[10px] font-black uppercase tracking-widest transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/orders/${o.id}`);
-                  }}
-                >
-                  View / Edit
-                </button>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                      className="px-5 py-3 bg-brandRed text-white rounded-md hover:bg-brandBlack text-[10px] font-black uppercase tracking-widest transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/orders/${o.id}`);
+                    }}
+                  >
+                    View / Edit
+                  </button>
+
+                  {nextAction(o.status) ? (
+                    <button
+                      className="px-5 py-3 bg-white text-brandBlack rounded-md hover:bg-brandRed hover:text-white text-[10px] font-black uppercase tracking-widest transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const action = nextAction(o.status);
+                        if (action) updateOrderStatus(o.id, action.status);
+                      }}
+                    >
+                      {nextAction(o.status)?.label}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ))
           )}
