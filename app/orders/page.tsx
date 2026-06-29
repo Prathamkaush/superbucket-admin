@@ -105,7 +105,6 @@ export default function OrdersPage() {
     ({
       PENDING: { label: "Accept", status: "CONFIRMED" },
       CONFIRMED: { label: "Dispatch", status: "SHIPPED" },
-      SHIPPED: { label: "Fulfill", status: "DELIVERED" },
     }[status]);
 
   return (

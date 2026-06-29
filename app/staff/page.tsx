@@ -9,12 +9,14 @@ import { ShieldPlus, UserPlus, UsersRound } from "lucide-react";
 const ROLES = [
   { value: "SUB_ADMIN", label: "Sub Admin" },
   { value: "PICKER", label: "Picker" },
+  { value: "DELIVERY_PARTNER", label: "Delivery Partner" },
 ];
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [verifyingId, setVerifyingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [currentRole, setCurrentRole] = useState<string | null>(null);
   const roleOptions = currentRole === "SUB_ADMIN"
@@ -39,7 +41,11 @@ export default function StaffPage() {
   };
 
   useEffect(() => {
-    setCurrentRole(getStoredAdminRole());
+    const role = getStoredAdminRole();
+    setCurrentRole(role);
+    if (role === "SUB_ADMIN") {
+      setForm((current) => ({ ...current, role: "PICKER" }));
+    }
     load();
   }, []);
 
@@ -48,12 +54,25 @@ export default function StaffPage() {
       setSaving(true);
       setError("");
       await api.post("/admin/staff", form);
-      setForm({ name: "", email: "", phone: "", password: "", role: "PICKER" });
+      setForm({ name: "", email: "", phone: "", password: "", role: currentRole === "SUB_ADMIN" ? "PICKER" : "PICKER" });
       await load();
     } catch (err: any) {
       setError(err.response?.data?.message || "Could not create staff member");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateVerification = async (id: number, isVerified: boolean) => {
+    try {
+      setVerifyingId(id);
+      setError("");
+      await api.patch(`/admin/staff/${id}/verification`, { isVerified });
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Could not update delivery partner");
+    } finally {
+      setVerifyingId(null);
     }
   };
 
@@ -66,7 +85,7 @@ export default function StaffPage() {
               Staff <span className="text-brandRed">Control</span>
             </h1>
             <p className="admin-hero-subtitle">
-              Create sub-admins and pickers for order fulfillment.
+              Create staff and approve delivery partner registrations.
             </p>
           </div>
           <div className="admin-dark-button pointer-events-none">
@@ -85,7 +104,7 @@ export default function StaffPage() {
                   Add Staff
                 </h2>
                 <p className="text-[11px] text-zinc-500">
-                  Admin creates sub-admins. Sub-admin creates pickers.
+                  Admin creates sub-admins and delivery partners. Sub-admin creates pickers.
                 </p>
               </div>
             </div>
@@ -144,13 +163,44 @@ export default function StaffPage() {
                     <div>
                       <p className="font-black text-white">{item.name}</p>
                       <p className="text-xs text-zinc-500">{item.email}</p>
+                      {item.phone ? <p className="mt-1 text-xs text-zinc-500">{item.phone}</p> : null}
                       <p className="mt-1 text-[10px] uppercase tracking-widest text-zinc-600">
-                        Created by {item.createdBy?.name || "Admin"}
+                        {item.createdBy?.name ? `Created by ${item.createdBy.name}` : item.role === "DELIVERY_PARTNER" ? "Self registration" : "Created by Admin"}
                       </p>
                     </div>
-                    <span className="w-fit rounded-md bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                      {item.role.replace("_", " ")}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="w-fit rounded-md bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                        {item.role.replace("_", " ")}
+                      </span>
+                      {item.role === "DELIVERY_PARTNER" ? (
+                        <>
+                          <span className={`w-fit rounded-md px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                            item.isVerified
+                              ? "bg-emerald-500/15 text-emerald-300"
+                              : "bg-amber-500/15 text-amber-300"
+                          }`}>
+                            {item.isVerified ? "Approved" : "Pending"}
+                          </span>
+                          {currentRole === "ADMIN" ? (
+                            <button
+                              onClick={() => updateVerification(item.id, !item.isVerified)}
+                              disabled={verifyingId === item.id}
+                              className={`rounded-md px-3 py-2 text-[10px] font-black uppercase tracking-widest transition ${
+                                item.isVerified
+                                  ? "bg-white/10 text-zinc-300 hover:bg-white hover:text-brandBlack"
+                                  : "bg-brandRed text-white hover:bg-white hover:text-brandBlack"
+                              } disabled:opacity-60`}
+                            >
+                              {verifyingId === item.id
+                                ? "Updating..."
+                                : item.isVerified
+                                  ? "Revoke"
+                                  : "Approve"}
+                            </button>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
 

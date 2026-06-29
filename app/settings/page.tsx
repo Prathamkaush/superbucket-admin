@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [supportPhone, setSupportPhone] = useState("");
   const [address, setAddress] = useState("");
   const [maintenance, setMaintenance] = useState(false);
+  const [deliverySlotTimes, setDeliverySlotTimes] = useState("");
 
   const loadSettings = async () => {
     try {
@@ -35,6 +36,7 @@ export default function SettingsPage() {
       setSupportPhone(safeText(settings.supportPhone));
       setAddress(safeText(settings.address));
       setMaintenance(Boolean(settings.maintenanceMode));
+      setDeliverySlotTimes((settings.deliverySlotTimes || []).join(", "));
     } catch (error) {
       console.error("Error loading settings:", error);
       setNotice({ type: "error", text: "Unable to load settings." });
@@ -60,6 +62,10 @@ export default function SettingsPage() {
       await api.patch("/settings/store", storeForm);
       await api.patch("/settings/general", {
         maintenanceMode: maintenance,
+        deliverySlotTimes: deliverySlotTimes
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
       });
 
       setNotice({ type: "success", text: "Settings saved and applied to the storefront." });
@@ -187,6 +193,32 @@ export default function SettingsPage() {
 
               <p className="mt-4 text-xs font-semibold leading-5 text-zinc-500">
                 When enabled, customers see a maintenance screen with the support email and phone above.
+              </p>
+            </section>
+
+            <section className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm xl:col-span-2">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brandRed/10 text-brandRed">
+                  <FiSettings size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-widest text-brandBlack">
+                    Delivery Slot Times
+                  </h2>
+                  <p className="text-xs font-semibold text-zinc-500">
+                    Customers choose today, tomorrow, or day after tomorrow. Admin only controls available times.
+                  </p>
+                </div>
+              </div>
+
+              <input
+                className="admin-field text-black"
+                placeholder="10:00 AM, 1:00 PM, 5:00 PM"
+                value={deliverySlotTimes}
+                onChange={(e) => setDeliverySlotTimes(e.target.value)}
+              />
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                Separate times with commas. These appear in scheduled delivery checkout.
               </p>
             </section>
           </div>
