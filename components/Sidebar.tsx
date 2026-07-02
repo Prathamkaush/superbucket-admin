@@ -25,6 +25,7 @@ import {
   UsersRound,
   ClipboardList,
   BarChart3,
+  Store,
 } from "lucide-react";
 import BrandMark from "./BrandMark";
 import { clearStoredAdmin, getStoredAdminRole } from "@/lib/auth";
@@ -111,6 +112,7 @@ export default function Sidebar() {
           {canSee(["ADMIN"]) && LinkItem("/categories", "Categories", Folder)}
           {canSee(["ADMIN"]) && LinkItem("/products", "Supplements", Dumbbell)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/inventory", "Inventory", ClipboardList)}
+          {canSee(["SUB_ADMIN"]) && LinkItem("/shops", "Shop Settings", Store)}
           {canSee(["ADMIN", "PICKER"]) && LinkItem("/orders", "Orders", ShoppingCart)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/staff", "Staff", UsersRound)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/picker-reports", "Picker Reports", BarChart3)}

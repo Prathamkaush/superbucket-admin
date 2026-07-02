@@ -10,7 +10,7 @@ const ROLE_HOME: Record<string, string> = {
 
 const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
   ADMIN: ["/"],
-  SUB_ADMIN: ["/inventory", "/staff", "/picker-reports"],
+  SUB_ADMIN: ["/inventory", "/shops", "/staff", "/picker-reports"],
   PICKER: ["/orders"],
 };
 
