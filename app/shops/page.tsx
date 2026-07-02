@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
-import { MapPin, RefreshCw, Save, Store } from "lucide-react";
+import { LocateFixed, MapPin, RefreshCw, Save, Store } from "lucide-react";
 
 type ShopForm = {
   name: string;
@@ -36,6 +36,7 @@ export default function ShopsPage() {
   const [shop, setShop] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const loadShop = async () => {
@@ -69,6 +70,36 @@ export default function ShopsPage() {
 
   const updateField = (field: keyof ShopForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const detectCurrentLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setNotice({ type: "error", text: "Location detection is not available in this browser." });
+      return;
+    }
+
+    setDetectingLocation(true);
+    setNotice(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((current) => ({
+          ...current,
+          latitude: position.coords.latitude.toFixed(7),
+          longitude: position.coords.longitude.toFixed(7),
+        }));
+        setNotice({ type: "success", text: "Location detected. Review the coordinates and save the shop." });
+        setDetectingLocation(false);
+      },
+      (error) => {
+        const message =
+          error.code === error.PERMISSION_DENIED
+            ? "Allow location permission and try again while you are at the shop."
+            : "Could not detect location. Check GPS/internet and try again at the shop.";
+        setNotice({ type: "error", text: message });
+        setDetectingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   };
 
   const saveShop = async () => {
@@ -162,8 +193,31 @@ export default function ShopsPage() {
                 <Field label="State" value={form.state} onChange={(value) => updateField("state", value)} />
                 <Field label="Pincode" value={form.pincode} onChange={(value) => updateField("pincode", value)} />
                 <Field label="Delivery Radius (km)" type="number" value={form.radiusKm} onChange={(value) => updateField("radiusKm", value)} />
-                <Field label="Latitude" type="number" value={form.latitude} onChange={(value) => updateField("latitude", value)} />
-                <Field label="Longitude" type="number" value={form.longitude} onChange={(value) => updateField("longitude", value)} />
+
+                <div className="md:col-span-2 rounded-md border border-white/10 bg-white/5 p-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-white">Exact Shop Location</h3>
+                      <p className="mt-1 text-xs leading-5 text-zinc-500">
+                        Use this while standing at the shop to fill latitude and longitude automatically.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={detectCurrentLocation}
+                      disabled={detectingLocation || saving}
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-brandBlack transition hover:bg-brandRed hover:text-white disabled:opacity-60"
+                    >
+                      <LocateFixed size={14} />
+                      {detectingLocation ? "Detecting" : "Use Current Location"}
+                    </button>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Latitude" type="number" value={form.latitude} onChange={(value) => updateField("latitude", value)} />
+                    <Field label="Longitude" type="number" value={form.longitude} onChange={(value) => updateField("longitude", value)} />
+                  </div>
+                </div>
               </div>
             )}
           </section>
