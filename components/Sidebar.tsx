@@ -26,6 +26,7 @@ import {
   ClipboardList,
   BarChart3,
   Store,
+  Bell,
 } from "lucide-react";
 import BrandMark from "./BrandMark";
 import { clearStoredAdmin, getStoredAdminRole } from "@/lib/auth";
@@ -121,6 +122,7 @@ export default function Sidebar() {
           {canSee(["ADMIN"]) && LinkItem("/feedback", "Feedback", MessageSquare)}
           {canSee(["ADMIN"]) && LinkItem("/contacts", "Contacts", Phone)}
           {canSee(["ADMIN"]) && LinkItem("/users", "Users", PersonStanding)}
+          {canSee(["ADMIN"]) && LinkItem("/notifications", "Notifications", Bell)}
           {canSee(["ADMIN"]) && LinkItem("/discounts", "Discounts", Percent)}
           {canSee(["ADMIN"]) && LinkItem("/trending", "Trending", Star)}
           {canSee(["ADMIN"]) && LinkItem("/reviews", "Reviews", Star)}
