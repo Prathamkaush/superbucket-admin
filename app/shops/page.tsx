@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
-import { LocateFixed, MapPin, RefreshCw, Save, Store } from "lucide-react";
+import { ExternalLink, LocateFixed, MapPin, RefreshCw, Save, Store } from "lucide-react";
 
 type ShopForm = {
   name: string;
@@ -37,6 +37,7 @@ export default function ShopsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
+  const [coordinateInput, setCoordinateInput] = useState("");
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const loadShop = async () => {
@@ -100,6 +101,24 @@ export default function ShopsPage() {
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
+  };
+
+  const applyCoordinateInput = () => {
+    const parsed = parseCoordinates(coordinateInput);
+    if (!parsed) {
+      setNotice({
+        type: "error",
+        text: "Paste a Google Maps link or coordinates like 28.613900, 77.209000.",
+      });
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      latitude: parsed.latitude.toFixed(7),
+      longitude: parsed.longitude.toFixed(7),
+    }));
+    setNotice({ type: "success", text: "Exact Google Maps pin applied. Save the shop to update delivery pickup location." });
   };
 
   const saveShop = async () => {
@@ -217,6 +236,43 @@ export default function ShopsPage() {
                     <Field label="Latitude" type="number" value={form.latitude} onChange={(value) => updateField("latitude", value)} />
                     <Field label="Longitude" type="number" value={form.longitude} onChange={(value) => updateField("longitude", value)} />
                   </div>
+
+                  <div className="mt-4 rounded-md border border-white/10 bg-zinc-950/50 p-4">
+                    <label className="space-y-2">
+                      <span className="admin-label">Google Maps Link Or Coordinates</span>
+                      <textarea
+                        className="admin-field min-h-20 resize-none"
+                        value={coordinateInput}
+                        onChange={(event) => setCoordinateInput(event.target.value)}
+                        placeholder="Paste a Google Maps share link, @lat,lng URL, or 28.613900, 77.209000"
+                      />
+                    </label>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={applyCoordinateInput}
+                        disabled={saving}
+                        className="inline-flex items-center justify-center gap-2 rounded-md bg-brandRed px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-brandBlack disabled:opacity-60"
+                      >
+                        <MapPin size={14} />
+                        Apply Exact Pin
+                      </button>
+                      {form.latitude && form.longitude ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${form.latitude},${form.longitude}`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-brandBlack transition hover:bg-brandRed hover:text-white"
+                        >
+                          <ExternalLink size={14} />
+                          Preview Saved Pin
+                        </a>
+                      ) : null}
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-zinc-500">
+                      For the most accurate pickup pin, open the shop in Google Maps, tap the exact entrance, share/copy the link, paste it here, then save.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -285,4 +341,35 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-bold text-white">{value}</p>
     </div>
   );
+}
+
+function parseCoordinates(value: string) {
+  const text = value.trim();
+  if (!text) return null;
+
+  const patterns = [
+    /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+    /[?&]query=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+    /[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+    /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+    const latitude = Number(match[1]);
+    const longitude = Number(match[2]);
+    if (
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180
+    ) {
+      return { latitude, longitude };
+    }
+  }
+
+  return null;
 }
