@@ -142,7 +142,9 @@ export default function ProductsPage() {
                   {p.img1 ? (
                     <img src={`${API_URL}/uploads/products/${p.img1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={p.title} />
                   ) : (
-                    <img src="/insanegenix/product/Whey.png" className="w-full h-full object-contain p-3" alt="" />
+                    <div className="flex h-full w-full items-center justify-center bg-brandBlue/5 text-xl font-black text-brandBlue">
+                      S
+                    </div>
                   )}
                 </div>
 

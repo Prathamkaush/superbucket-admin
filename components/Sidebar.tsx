@@ -53,8 +53,8 @@ export default function Sidebar() {
         flex items-center gap-3 px-4 py-3 rounded-md text-[11px] font-black uppercase tracking-widest transition-all duration-300
         ${
           pathname === href
-            ? "bg-brandRed text-white shadow-lg shadow-brandRed/20"
-            : "text-zinc-400 hover:bg-white/10 hover:text-white"
+            ? "bg-brandBlue text-white shadow-lg shadow-brandBlue/20"
+            : "text-slate-600 hover:bg-brandBlue/5 hover:text-brandBlue"
         }
       `}
     >
@@ -66,8 +66,8 @@ export default function Sidebar() {
   return (
     <>
       {/* MOBILE HEADER */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-brandBlack border-b border-white/10 flex items-center px-4 z-40">
-        <button onClick={() => setOpen(true)} className="p-2 text-white" aria-label="Open menu">
+      <div className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center border-b border-blue-100 bg-white px-4 shadow-sm md:hidden">
+        <button onClick={() => setOpen(true)} className="p-2 text-brandBlue" aria-label="Open menu">
           <Menu size={24} />
         </button>
         <BrandMark compact className="ml-2" />
@@ -77,25 +77,24 @@ export default function Sidebar() {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-brandBlueDeep/20 backdrop-blur-sm md:hidden"
         />
       )}
 
       {/* SIDEBAR CONTAINER */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-brandBlack text-white
-          border-r border-white/10 flex flex-col z-50
+          fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-blue-100 bg-white text-brandBlack shadow-xl
           transform transition-transform duration-500 ease-in-out
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
       >
         {/* TOP: BRANDING */}
-        <div className="p-6 border-b border-white/10 relative">
+        <div className="relative border-b border-blue-100 p-6">
           <button
             onClick={() => setOpen(false)}
-            className="absolute top-6 right-4 md:hidden text-zinc-400"
+            className="absolute right-4 top-6 text-slate-500 md:hidden"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -109,7 +108,7 @@ export default function Sidebar() {
           {canSee(["ADMIN"]) && LinkItem("/dashboard", "Dashboard", LayoutDashboard)}
           {canSee(["ADMIN"]) && LinkItem("/properties", "Properties", Building)}
           {canSee(["ADMIN"]) && LinkItem("/services", "Home Services", Wrench)}
-          <div className="h-px bg-white/10 my-4 mx-2" />
+          <div className="mx-2 my-4 h-px bg-blue-100" />
           {canSee(["ADMIN"]) && LinkItem("/categories", "Categories", Folder)}
           {canSee(["ADMIN"]) && LinkItem("/products", "Supplements", Dumbbell)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/inventory", "Inventory", ClipboardList)}
@@ -130,17 +129,17 @@ export default function Sidebar() {
         </div>
 
         {/* BOTTOM: FIXED LOGOUT */}
-        <div className="p-6 border-t border-white/10 bg-zinc-950">
-          <div className="mb-4 flex items-center gap-3 rounded-md border border-white/10 bg-white/5 p-3">
+        <div className="border-t border-blue-100 bg-brandBlue/5 p-6">
+          <div className="mb-4 flex items-center gap-3 rounded-md border border-blue-100 bg-white p-3">
             <ShieldCheck size={18} className="text-brandRed" />
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white">Admin Secure</p>
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-500">Superbucket</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-brandBlack">Admin Secure</p>
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Superbucket</p>
             </div>
           </div>
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-full px-6 py-3 rounded-md bg-white text-brandBlack text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brandRed hover:text-white transition-all active:scale-95"
+            className="w-full rounded-md bg-brandBlue px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-brandRed active:scale-95"
           >
             Logout Session
           </button>
@@ -149,12 +148,12 @@ export default function Sidebar() {
 
       {/* LOGOUT CONFIRM MODAL */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-950/90 border border-white/10 rounded-md shadow-2xl p-8 w-full max-w-sm">
-            <h3 className="text-sm font-black uppercase tracking-widest mb-2 text-white">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-brandBlueDeep/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-md border border-blue-100 bg-white p-8 shadow-2xl">
+            <h3 className="mb-2 text-sm font-black uppercase tracking-widest text-brandBlack">
               Confirm Logout
             </h3>
-            <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-tight mb-8">
+            <p className="mb-8 text-[11px] font-medium uppercase tracking-tight text-slate-500">
               You will need to re-authenticate to access the admin portal.
             </p>
             <div className="flex flex-col gap-2">
@@ -163,13 +162,13 @@ export default function Sidebar() {
                   clearStoredAdmin();
                   router.push("/login");
                 }}
-                className="w-full py-4 bg-brandRed text-white text-[10px] font-black uppercase tracking-widest rounded transition-all hover:bg-white hover:text-brandBlack"
+                className="w-full rounded bg-brandRed py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-brandBlueDark"
               >
                 Logout Now
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
+                className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-brandBlue"
               >
                 Go Back
               </button>

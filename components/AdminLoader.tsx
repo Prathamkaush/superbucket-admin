@@ -1,22 +1,16 @@
-import Image from "next/image";
+import BrandMark from "./BrandMark";
 
 export default function AdminLoader({ fullScreen = false }: { fullScreen?: boolean }) {
   const content = (
-    <div className={fullScreen ? "eg-admin-loading-center" : "eg-inline-loader"}>
-      <div className={fullScreen ? "eg-admin-loading-absolute text-center" : "text-center"}>
-        <div className="eg-loader">
-          <div className="eg-loader-spin" />
+    <div className={fullScreen ? "sb-admin-loading-center" : "sb-inline-loader"}>
+      <div className={fullScreen ? "sb-admin-loading-absolute text-center" : "text-center"}>
+        <div className="sb-loader">
+          <div className="sb-loader-spin" />
         </div>
-        <div className="mt-8 flex justify-center">
-          <Image
-            src="/insanegenix/logo/logo-white.png"
-            alt="InsaneGenix"
-            width={170}
-            height={40}
-            className="h-10 w-auto object-contain"
-          />
+        <div className="mt-8 flex justify-center rounded-md border border-blue-100 bg-white px-4 py-3">
+          <BrandMark />
         </div>
-        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">
+        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
           Loading admin
         </p>
       </div>
@@ -24,7 +18,7 @@ export default function AdminLoader({ fullScreen = false }: { fullScreen?: boole
   );
 
   if (fullScreen) {
-    return <div className="eg-admin-loading">{content}</div>;
+    return <div className="sb-admin-loading">{content}</div>;
   }
 
   return content;

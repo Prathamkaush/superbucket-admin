@@ -37,7 +37,9 @@ export default function ProductPreviewModal({ isOpen, onClose, product }: Produc
                 <img key={img} src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${img}`} alt={`Preview ${i + 1}`} className="w-full h-52 object-cover rounded-md border border-white/10 bg-white/5" />
               ))
             ) : (
-              <img src="/insanegenix/product/Whey.png" alt="" className="w-full h-64 object-contain rounded-md border border-white/10 bg-white/5 p-8" />
+              <div className="flex h-64 w-full items-center justify-center rounded-md border border-blue-100 bg-brandBlue/5 text-4xl font-black text-brandBlue">
+                S
+              </div>
             )}
           </div>
 

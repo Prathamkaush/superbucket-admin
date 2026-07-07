@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -84,7 +83,7 @@ const isHydrating = useRef(false);
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [brandName, setBrandName] = useState("InsaneGenix");
+  const [brandName, setBrandName] = useState("Superbucket");
   const [productLine, setProductLine] = useState("");
   const [goal, setGoal] = useState("");
   const [dietaryPreference, setDietaryPreference] = useState("");
@@ -114,9 +113,9 @@ const isHydrating = useRef(false);
   const [countryOfOrigin, setCountryOfOrigin] = useState("India");
   const [marketedBy, setMarketedBy] = useState("");
   const [manufacturedBy, setManufacturedBy] = useState("");
-  const [sellerName, setSellerName] = useState("InsaneGenix");
+  const [sellerName, setSellerName] = useState("Superbucket");
   const [authenticityNote, setAuthenticityNote] = useState(
-    "Scan or verify the product code before use. Buy only from authorized InsaneGenix channels.",
+    "Scan or verify the product code before use. Buy only from authorized Superbucket channels.",
   );
   const [returnPolicy, setReturnPolicy] = useState(
     "Returns accepted only for damaged, incorrect, or sealed unused products as per policy.",
@@ -190,7 +189,7 @@ const isHydrating = useRef(false);
     setTitle(initialProduct.title || "");
     setShortDescription(initialProduct.shortDescription || "");
     setDescription(initialProduct.description || "");
-    setBrandName(initialProduct.brandName || "InsaneGenix");
+    setBrandName(initialProduct.brandName || "Superbucket");
     setProductLine(initialProduct.productLine || "");
     setGoal(initialProduct.goal || "");
     setDietaryPreference(initialProduct.dietaryPreference || "");
@@ -254,7 +253,7 @@ const isHydrating = useRef(false);
     setCountryOfOrigin(initialProduct.countryOfOrigin || "India");
     setMarketedBy(initialProduct.marketedBy || "");
     setManufacturedBy(initialProduct.manufacturedBy || "");
-    setSellerName(initialProduct.sellerName || "InsaneGenix");
+    setSellerName(initialProduct.sellerName || "Superbucket");
     setAuthenticityNote(initialProduct.authenticityNote || "");
     setReturnPolicy(initialProduct.returnPolicy || "");
     setKeyBenefitsText(
@@ -965,12 +964,9 @@ const isHydrating = useRef(false);
 
           <div className="rounded-md bg-brandBlack p-5 text-white">
             <div className="mb-4 flex items-center gap-3">
-              <Image
-                src="/insanegenix/logo/favicon.svg"
-                alt=""
-                width={26}
-                height={26}
-              />
+              <div className="flex h-[26px] w-[26px] items-center justify-center rounded-md bg-brandBlue text-xs font-black text-white">
+                S
+              </div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
                 Catalog Summary
               </p>
@@ -1025,7 +1021,7 @@ function AdminLayoutShell({
           </button>
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-brandRed px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-              <BadgeCheck size={14} /> InsaneGenix Catalog
+              <BadgeCheck size={14} /> Superbucket Catalog
             </div>
             <h1 className="text-2xl font-black uppercase tracking-tight md:text-3xl">
               {title}

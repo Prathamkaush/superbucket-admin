@@ -78,8 +78,8 @@ export default function OrderStatusTimeline({
               <motion.div
                 initial={false}
                 animate={{ 
-                  backgroundColor: active ? "var(--eg-theme-primary, #e50914)" : "#080808",
-                  borderColor: active ? "var(--eg-theme-primary, #e50914)" : "#ffffff1a",
+                  backgroundColor: active ? "var(--sb-red, #e30613)" : "#061a3a",
+                  borderColor: active ? "var(--sb-red, #e30613)" : "#0057b833",
                   scale: current ? 1.1 : 1
                 }}
                 className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-500 shadow-sm shrink-0 ${

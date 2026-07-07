@@ -68,17 +68,15 @@ export default function DashboardPage() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl space-y-8">
-        <div className="relative overflow-hidden rounded-sm bg-brandBlack p-6 text-white">
-          <img
-            src="/insanegenix/product/ISO.png"
-            alt=""
-            className="absolute right-8 top-1/2 hidden h-44 -translate-y-1/2 object-contain opacity-20 lg:block"
-          />
+        <div className="relative overflow-hidden rounded-md border border-blue-100 bg-white p-6 text-brandBlack shadow-xl">
+          <div className="absolute right-8 top-1/2 hidden h-32 w-32 -translate-y-1/2 items-center justify-center rounded-md bg-brandBlue text-5xl font-black text-white opacity-10 lg:flex">
+            S
+          </div>
           <div className="relative max-w-3xl">
-            <p className="admin-page-kicker">InsaneGenix Control Room</p>
-            <h1 className="mt-2 text-3xl font-black uppercase tracking-tight md:text-4xl">Admin Dashboard</h1>
-            <p className="mt-2 text-sm text-zinc-400">
-              Track revenue, orders, customers, product stock, and supplement catalog health.
+            <p className="admin-page-kicker">Superbucket Control Room</p>
+            <h1 className="mt-2 text-3xl font-black uppercase tracking-tight text-brandBlack md:text-4xl">Admin Dashboard</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Track revenue, orders, customers, product stock, and catalog health.
             </p>
           </div>
         </div>
@@ -87,18 +85,18 @@ export default function DashboardPage() {
           <UserStatsCards users={stats.users} />
           {cards.map((item) => (
             <div key={item.label} className="admin-surface flex min-h-[110px] flex-col justify-center p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{item.label}</p>
-              <p className="mt-2 text-2xl font-black text-white">{item.value}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
+              <p className="mt-2 text-2xl font-black text-brandBlack">{item.value}</p>
             </div>
           ))}
         </div>
 
         {lowStockItems.length > 0 && (
           <div className="rounded-sm border-l-4 border-brandRed bg-brandRed/10 p-4 shadow-sm">
-            <h3 className="font-black uppercase tracking-tight text-red-400">Low Stock Alert</h3>
+            <h3 className="font-black uppercase tracking-tight text-brandRed">Low Stock Alert</h3>
             <ul className="mt-3 grid grid-cols-1 gap-2 text-sm md:grid-cols-2 lg:grid-cols-3">
               {lowStockItems.map((p) => (
-                <li key={p.id} className="rounded-sm border border-brandRed/20 bg-white/5 p-2 text-red-300">
+                <li key={p.id} className="rounded-sm border border-brandRed/20 bg-white p-2 text-brandRed">
                   {p.title} <span className="font-black">{p.stock}</span> units left
                 </li>
               ))}
@@ -125,20 +123,20 @@ export default function DashboardPage() {
 
         <div className="admin-surface overflow-hidden">
           <div className="border-b border-white/10 bg-white/5 p-6">
-            <h2 className="text-lg font-black uppercase tracking-tight text-white">Recent Supplements</h2>
+            <h2 className="text-lg font-black uppercase tracking-tight text-brandBlack">Recent Products</h2>
           </div>
 
           <div className="divide-y divide-white/10">
             {stats.recentProducts.map((p: any) => (
               <div key={p.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-white/5">
                 <img
-                  src={p.img1 ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${p.img1}` : "/insanegenix/product/Whey.png"}
+                  src={p.img1 ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/products/${p.img1}` : "/window.svg"}
                   alt={p.title}
-                  className="h-14 w-14 rounded-sm border border-white/10 object-cover shadow-sm"
+                  className="h-14 w-14 rounded-sm border border-blue-100 bg-brandBlue/5 object-cover p-2 shadow-sm"
                 />
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold text-white">{p.title}</p>
+                  <p className="truncate font-bold text-brandBlack">{p.title}</p>
                   <p className="mt-1 text-sm font-black text-brandRed">₹{p.price}</p>
                 </div>
 
@@ -160,7 +158,7 @@ export default function DashboardPage() {
 function ChartPanel({ title, tone, children }: { title: string; tone: string; children: React.ReactNode }) {
   return (
     <div className="admin-surface p-6">
-      <h3 className="mb-6 flex items-center text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400">
+      <h3 className="mb-6 flex items-center text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
         <span className={`mr-2 h-2 w-2 rounded-full ${tone}`} />
         {title} (Last 7 Days)
       </h3>

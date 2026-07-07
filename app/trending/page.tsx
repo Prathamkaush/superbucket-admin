@@ -93,7 +93,9 @@ export default function AdminTrendingProductsPage() {
                                 alt={p.title}
                               />
                             ) : (
-                              <img src="/insanegenix/product/Whey.png" className="w-full h-full object-contain p-2" alt="" />
+                              <div className="flex h-full w-full items-center justify-center bg-brandBlue/5 text-lg font-black text-brandBlue">
+                                S
+                              </div>
                             )}
                           </div>
                           <div className="min-w-0">
