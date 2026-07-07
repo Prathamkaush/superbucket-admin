@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, Image as ImageIcon, Send } from "lucide-react";
 import { api } from "@/lib/api";
+import AdminLayout from "@/components/AdminLayout";
 
 const AUDIENCES = [
   { value: "ALL", label: "Everyone" },
@@ -46,6 +47,7 @@ export default function NotificationsPage() {
   }
 
   return (
+        <AdminLayout>
     <main className="min-h-screen bg-zinc-950 px-6 py-8 text-white md:px-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center gap-3">
@@ -157,6 +159,7 @@ export default function NotificationsPage() {
         </div>
       </div>
     </main>
+    </AdminLayout>
   );
 }
 
