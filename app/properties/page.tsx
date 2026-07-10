@@ -30,10 +30,8 @@ export default function AdminProperties() {
         const res = await api.get("/properties/admin/pending");
         setData(res.data);
       } else {
-        const res = await api.get("/properties", {
-          params: { limit: 100 },
-        });
-        setData(res.data.properties);
+        const res = await api.get("/properties/admin/all");
+        setData(res.data);
       }
     } catch (error) {
       console.error("Error fetching properties:", error);
@@ -127,7 +125,7 @@ export default function AdminProperties() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                Active Listings
+                All Listings
               </button>
             </div>
 
@@ -144,6 +142,7 @@ export default function AdminProperties() {
                 <th className="admin-th text-left">Property Details</th>
                 <th className="admin-th text-left">Owner Info</th>
                 <th className="admin-th text-center">Type / Price</th>
+                <th className="admin-th text-center">Leads</th>
                 <th className="admin-th text-center">Status</th>
                 <th className="admin-th text-right">Actions</th>
               </tr>
@@ -151,13 +150,13 @@ export default function AdminProperties() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-gray-300 animate-pulse">
+                  <td colSpan={6} className="p-20 text-center text-[10px] font-black uppercase tracking-[0.4em] text-gray-300 animate-pulse">
                     Loading properties data...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-20 text-center">
+                  <td colSpan={6} className="p-20 text-center">
                     <FiInbox className="mx-auto text-gray-200 mb-4" size={48} />
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300">
                       No listings in this category
@@ -205,6 +204,13 @@ export default function AdminProperties() {
                       <p className="text-xs font-black text-brandBlack mt-1.5">
                         ₹{parseFloat(property.price).toLocaleString("en-IN")}
                         {property.mode === "RENT" ? "/mo" : ""}
+                      </p>
+                    </td>
+
+                    <td className="p-5 text-center">
+                      <p className="text-xs font-black text-brandBlack">{property._count?.leads || property.leads?.length || 0}</p>
+                      <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                        {leadStatusSummary(property.leads)}
                       </p>
                     </td>
 
@@ -352,6 +358,20 @@ export default function AdminProperties() {
                 </div>
               </div>
 
+              <div className="border-b border-zinc-100 pb-6">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Lead Status Summary</h4>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {leadStatusBadges(selectedProperty.leads).map((item) => (
+                    <span
+                      key={item.label}
+                      className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-zinc-700"
+                    >
+                      {item.label}: {item.count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               {/* Description */}
               {selectedProperty.details && (
                 <div>
@@ -445,4 +465,28 @@ export default function AdminProperties() {
       )}
     </AdminLayout>
   );
+}
+
+function leadStatusSummary(leads: any[] = []) {
+  if (!leads.length) return "No leads";
+  const counts = leadStatusBadges(leads);
+  return counts.slice(0, 2).map((item) => `${item.count} ${item.label}`).join(" · ");
+}
+
+function leadStatusBadges(leads: any[] = []) {
+  const labels: Record<string, string> = {
+    PENDING: "Pending",
+    VISIT_BOOKED: "Visit",
+    NEGOTIATING: "Negotiating",
+    NEEDS_CALLBACK: "Callback",
+    RESOLVED: "Resolved",
+  };
+  const counts = leads.reduce((all: Record<string, number>, lead: any) => {
+    all[lead.status] = (all[lead.status] || 0) + 1;
+    return all;
+  }, {});
+
+  return Object.entries(labels)
+    .map(([status, label]) => ({ label, count: counts[status] || 0 }))
+    .filter((item) => item.count > 0);
 }

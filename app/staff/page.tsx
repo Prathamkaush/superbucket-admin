@@ -14,6 +14,7 @@ const ROLES = [
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<any[]>([]);
+  const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
@@ -28,6 +29,7 @@ export default function StaffPage() {
     phone: "",
     password: "",
     role: "PICKER",
+    shopId: "",
   });
 
   const load = async () => {
@@ -35,6 +37,8 @@ export default function StaffPage() {
     try {
       const res = await api.get("/admin/staff");
       setStaff(res.data || []);
+      const shopsRes = await api.get("/admin/shops");
+      setShops(shopsRes.data || []);
     } finally {
       setLoading(false);
     }
@@ -53,13 +57,26 @@ export default function StaffPage() {
     try {
       setSaving(true);
       setError("");
-      await api.post("/admin/staff", form);
-      setForm({ name: "", email: "", phone: "", password: "", role: currentRole === "SUB_ADMIN" ? "PICKER" : "PICKER" });
+      await api.post("/admin/staff", {
+        ...form,
+        shopId: form.shopId ? Number(form.shopId) : undefined,
+      });
+      setForm({ name: "", email: "", phone: "", password: "", role: currentRole === "SUB_ADMIN" ? "PICKER" : "PICKER", shopId: "" });
       await load();
     } catch (err: any) {
       setError(err.response?.data?.message || "Could not create staff member");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateStaffShop = async (id: number, shopId: string) => {
+    try {
+      setError("");
+      await api.patch(`/admin/staff/${id}/shop`, { shopId: Number(shopId) });
+      await load();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Could not assign shop");
     }
   };
 
@@ -136,6 +153,24 @@ export default function StaffPage() {
                 </select>
               </div>
 
+              {["PICKER", "DELIVERY_PARTNER"].includes(form.role) ? (
+                <div>
+                  <label className="admin-label mb-2 block">Assigned Shop</label>
+                  <select
+                    className="admin-field"
+                    value={form.shopId}
+                    onChange={(e) => setForm({ ...form, shopId: e.target.value })}
+                  >
+                    <option value="">Select shop</option>
+                    {shops.map((shop) => (
+                      <option key={shop.id} value={shop.id}>
+                        {shop.name} · {shop.pincode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
               <button
                 onClick={createStaff}
                 disabled={saving}
@@ -164,6 +199,13 @@ export default function StaffPage() {
                       <p className="font-black text-white">{item.name}</p>
                       <p className="text-xs text-zinc-500">{item.email}</p>
                       {item.phone ? <p className="mt-1 text-xs text-zinc-500">{item.phone}</p> : null}
+                      {item.staffShop ? (
+                        <p className="mt-1 text-xs text-emerald-300">
+                          Shop: {item.staffShop.name} · {item.staffShop.pincode}
+                        </p>
+                      ) : ["PICKER", "DELIVERY_PARTNER"].includes(item.role) ? (
+                        <p className="mt-1 text-xs text-amber-300">No shop assigned</p>
+                      ) : null}
                       <p className="mt-1 text-[10px] uppercase tracking-widest text-zinc-600">
                         {item.createdBy?.name ? `Created by ${item.createdBy.name}` : item.role === "DELIVERY_PARTNER" ? "Self registration" : "Created by Admin"}
                       </p>
@@ -199,6 +241,20 @@ export default function StaffPage() {
                             </button>
                           ) : null}
                         </>
+                      ) : null}
+                      {["PICKER", "DELIVERY_PARTNER"].includes(item.role) ? (
+                        <select
+                          className="rounded-md border border-white/10 bg-white/10 px-3 py-2 text-[10px] font-bold text-white outline-none"
+                          value={item.staffShop?.id || ""}
+                          onChange={(e) => updateStaffShop(item.id, e.target.value)}
+                        >
+                          <option value="">Assign shop</option>
+                          {shops.map((shop) => (
+                            <option key={shop.id} value={shop.id}>
+                              {shop.name} · {shop.pincode}
+                            </option>
+                          ))}
+                        </select>
                       ) : null}
                     </div>
                   </div>
