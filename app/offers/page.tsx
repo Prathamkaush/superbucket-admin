@@ -21,6 +21,7 @@ type HomeOffer = {
   code?: string | null;
   icon?: string | null;
   color?: string | null;
+  imageUrl?: string | null;
   sortOrder: number;
   isActive: boolean;
   startsAt?: string | null;
@@ -34,6 +35,7 @@ const emptyForm = {
   code: "",
   icon: "gift",
   color: "#E30613",
+  imageUrl: "",
   sortOrder: "0",
   startsAt: "",
   expiresAt: "",
@@ -77,6 +79,7 @@ export default function OffersPage() {
       code: offer.code || "",
       icon: offer.icon || "gift",
       color: offer.color || "#E30613",
+      imageUrl: offer.imageUrl || "",
       sortOrder: String(offer.sortOrder || 0),
       startsAt: toDateInput(offer.startsAt),
       expiresAt: toDateInput(offer.expiresAt),
@@ -95,6 +98,7 @@ export default function OffersPage() {
       code: form.code || null,
       icon: form.icon || "gift",
       color: form.color || "#E30613",
+      imageUrl: form.imageUrl || null,
       sortOrder: Number(form.sortOrder || 0),
       startsAt: form.startsAt || null,
       expiresAt: form.expiresAt || null,
@@ -239,6 +243,15 @@ export default function OffersPage() {
               </Field>
             </div>
 
+            <Field label="Image URL">
+              <input
+                className="admin-field text-black"
+                value={form.imageUrl}
+                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                placeholder="https://example.com/business-poster.jpg"
+              />
+            </Field>
+
             <div className="grid grid-cols-2 gap-3">
               <Field label="Starts">
                 <input
@@ -277,12 +290,20 @@ export default function OffersPage() {
               <div className="divide-y divide-zinc-100">
                 {offers.map((offer) => (
                   <div key={offer.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center">
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-white"
-                      style={{ backgroundColor: offer.color || "#E30613" }}
-                    >
-                      <FiTag size={18} />
-                    </div>
+                    {offer.imageUrl ? (
+                      <img
+                        src={offer.imageUrl}
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-white"
+                        style={{ backgroundColor: offer.color || "#E30613" }}
+                      >
+                        <FiTag size={18} />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-sm font-black text-brandBlack">{offer.title}</h3>
