@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import TrackingTimeline from "@/components/TrackingTimeline";
 import OrderStatusTimeline from "@/components/order/OrderStatusTimeline";
 import { FiPackage, FiTruck, FiMapPin, FiCreditCard, FiClock } from "react-icons/fi";
+import { getStoredAdminRole } from "@/lib/auth";
 
 /* ================= ENHANCED STATUS BADGE ================= */
 const StatusBadge = ({ status }: { status: string }) => {
@@ -34,14 +35,24 @@ export default function OrderDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  const [role, setRole] = useState<string | null>(null);
 
   const fetchOrder = async () => {
-    const res = await api.get(`/admin/orders/${orderId}`);
-    setOrder(res.data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError("");
+      const res = await api.get(`/orders/${orderId}`);
+      setOrder(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || "Could not load this order");
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
+    setRole(getStoredAdminRole());
     fetchOrder();
   }, []);
 
@@ -70,7 +81,11 @@ export default function OrderDetailsPage() {
     try {
       setActionLoading(true);
       setError("");
-      await api.post(`/admin/shipping/delhivery/${orderId}`);
+      if (role === "ADMIN") {
+        await api.post(`/admin/shipping/delhivery/${orderId}`);
+      } else {
+        await api.put(`/orders/${orderId}/status`, { status: "SHIPPED" });
+      }
       await fetchOrder();
     } catch (err: any) {
       setError(err.response?.data?.message || "Delhivery shipment failed");
@@ -85,6 +100,20 @@ export default function OrderDetailsPage() {
         <div className="py-20 flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-brandRed border-t-transparent rounded-full animate-spin" />
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Order Data...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!order) {
+    return (
+      <AdminLayout>
+        <div className="admin-page max-w-3xl">
+          <div className="admin-surface p-8 text-center">
+            <h1 className="text-lg font-black text-white">Order unavailable</h1>
+            <p className="mt-3 text-sm text-rose-400">{error || "This order could not be loaded."}</p>
+            <button onClick={fetchOrder} className="mt-6 rounded-md bg-brandRed px-6 py-3 text-xs font-black uppercase text-white">Retry</button>
+          </div>
         </div>
       </AdminLayout>
     );

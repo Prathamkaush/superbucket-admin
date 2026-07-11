@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, Image as ImageIcon, Send } from "lucide-react";
-import { api } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Bell, CheckCheck, Image as ImageIcon, Send } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
+import { api } from "@/lib/api";
+import { getStoredAdminRole } from "@/lib/auth";
 
 const AUDIENCES = [
   { value: "ALL", label: "Everyone" },
@@ -13,163 +15,129 @@ const AUDIENCES = [
 ];
 
 export default function NotificationsPage() {
+  const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [audience, setAudience] = useState("ALL");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
 
-  const canSend = title.trim().length > 0 && body.trim().length > 0 && !sending;
+  const loadInbox = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const response = await api.get("/notifications/my", { params: { page: 1, limit: 50 } });
+      setItems(response.data.items || []);
+      setUnread(Number(response.data.unread || 0));
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setRole(getStoredAdminRole());
+    loadInbox();
+    const timer = window.setInterval(() => loadInbox(true), 30000);
+    return () => window.clearInterval(timer);
+  }, [loadInbox]);
+
+  async function openNotification(item: any) {
+    if (!item.readAt) {
+      await api.patch(`/notifications/${item.id}/read`).catch(() => undefined);
+      setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, readAt: new Date().toISOString() } : entry));
+      setUnread((value) => Math.max(0, value - 1));
+    }
+    const target = notificationTarget(item.data, role);
+    if (target) router.push(target);
+  }
+
+  async function markAllRead() {
+    await api.patch("/notifications/read-all");
+    setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })));
+    setUnread(0);
+  }
 
   async function sendNotification() {
-    if (!canSend) return;
-    setSending(true);
-    setResult(null);
-    setError(null);
+    if (!title.trim() || !body.trim() || sending) return;
     try {
+      setSending(true);
+      setMessage("");
       const response = await api.post("/admin/notifications/broadcast", {
-        audience,
-        title: title.trim(),
-        body: body.trim(),
-        imageUrl: imageUrl.trim() || undefined,
+        audience, title: title.trim(), body: body.trim(), imageUrl: imageUrl.trim() || undefined,
       });
-      setResult(`Sent to ${response.data.recipients} recipient(s).`);
-      setTitle("");
-      setBody("");
-      setImageUrl("");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Could not send notification");
+      setMessage(`Sent to ${response.data.recipients} recipient(s).`);
+      setTitle(""); setBody(""); setImageUrl("");
+      await loadInbox(true);
+    } catch (error: any) {
+      setMessage(error?.response?.data?.message || "Could not send notification");
     } finally {
       setSending(false);
     }
   }
 
   return (
-        <AdminLayout>
-    <main className="min-h-screen bg-zinc-950 px-6 py-8 text-white md:px-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-md bg-brandRed">
-            <Bell size={20} />
-          </div>
+    <AdminLayout>
+      <div className="admin-page max-w-6xl">
+        <div className="admin-hero">
           <div>
-            <h1 className="text-xl font-black uppercase tracking-widest">Push Notifications</h1>
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              Send image and text campaigns to app users
-            </p>
+            <h1 className="admin-hero-title">Notification <span className="text-brandRed">Center</span></h1>
+            <p className="admin-hero-subtitle">Orders, staff, property, service, and account activity.</p>
           </div>
+          <div className="rounded-md bg-brandRed px-4 py-3 text-xs font-black text-white">{unread} unread</div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <section className="rounded-md border border-white/10 bg-white/[0.03] p-6">
-            <div className="mb-6">
-              <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                Audience
-              </label>
-              <div className="grid gap-2 sm:grid-cols-4">
-                {AUDIENCES.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setAudience(item.value)}
-                    className={`rounded-md border px-3 py-3 text-[10px] font-black uppercase tracking-widest transition ${
-                      audience === item.value
-                        ? "border-brandRed bg-brandRed text-white"
-                        : "border-white/10 bg-zinc-900 text-zinc-400 hover:border-white/30 hover:text-white"
-                    }`}
-                  >
-                    {item.label}
+        <div className={`grid gap-6 ${role === "ADMIN" ? "xl:grid-cols-[1fr_390px]" : ""}`}>
+          <section className="admin-surface overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 p-5">
+              <div className="flex items-center gap-3"><Bell className="text-brandRed" size={20} /><h2 className="text-sm font-black uppercase tracking-widest text-white">Your inbox</h2></div>
+              <button disabled={!unread} onClick={markAllRead} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white disabled:opacity-40"><CheckCheck size={15} /> Mark all read</button>
+            </div>
+            {loading ? <div className="p-12 text-center text-xs font-black uppercase text-zinc-500">Loading notifications...</div> : items.length ? (
+              <div className="divide-y divide-white/10">
+                {items.map((item) => (
+                  <button key={item.id} onClick={() => openNotification(item)} className={`block w-full p-5 text-left transition hover:bg-white/5 ${item.readAt ? "bg-transparent" : "bg-brandRed/10"}`}>
+                    <div className="flex items-start gap-3">
+                      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${item.readAt ? "bg-zinc-700" : "bg-brandRed"}`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-black text-white">{item.title}</p><span className="text-[9px] font-bold uppercase text-zinc-600">{new Date(item.createdAt).toLocaleString()}</span></div>
+                        <p className="mt-2 text-xs font-medium leading-5 text-zinc-400">{item.body}</p>
+                        <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-brandRed">{String(item.type || "Activity").replaceAll("_", " ")}</p>
+                      </div>
+                    </div>
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-5">
-              <Field label="Title">
-                <input
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  maxLength={120}
-                  className="w-full rounded-md border border-white/10 bg-zinc-900 px-4 py-3 text-sm font-bold text-white outline-none transition focus:border-brandRed"
-                  placeholder="Big sale is live"
-                />
-              </Field>
-
-              <Field label="Message">
-                <textarea
-                  value={body}
-                  onChange={(event) => setBody(event.target.value)}
-                  maxLength={800}
-                  rows={6}
-                  className="w-full resize-none rounded-md border border-white/10 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brandRed"
-                  placeholder="Tell users what is new, urgent, or useful."
-                />
-              </Field>
-
-              <Field label="Image URL">
-                <div className="flex items-center gap-3 rounded-md border border-white/10 bg-zinc-900 px-4 py-3 focus-within:border-brandRed">
-                  <ImageIcon size={16} className="text-zinc-500" />
-                  <input
-                    value={imageUrl}
-                    onChange={(event) => setImageUrl(event.target.value)}
-                    className="w-full bg-transparent text-sm font-semibold text-white outline-none"
-                    placeholder="https://..."
-                  />
-                </div>
-              </Field>
-
-              {result ? <p className="text-xs font-bold text-emerald-400">{result}</p> : null}
-              {error ? <p className="text-xs font-bold text-red-400">{error}</p> : null}
-
-              <button
-                type="button"
-                disabled={!canSend}
-                onClick={sendNotification}
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-brandRed px-5 py-4 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-white hover:text-brandBlack disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Send size={16} />
-                {sending ? "Sending..." : "Send Notification"}
-              </button>
-            </div>
+            ) : <div className="p-12 text-center text-xs font-black uppercase text-zinc-500">No notifications yet</div>}
           </section>
 
-          <aside className="rounded-md border border-white/10 bg-white p-4 text-brandBlack">
-            <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">Preview</p>
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt=""
-                className="mb-4 aspect-[16/9] w-full rounded-md object-cover"
-              />
-            ) : (
-              <div className="mb-4 flex aspect-[16/9] w-full items-center justify-center rounded-md bg-zinc-100">
-                <ImageIcon size={24} className="text-zinc-400" />
-              </div>
-            )}
-            <h2 className="text-base font-black">{title || "Notification title"}</h2>
-            <p className="mt-2 text-sm font-medium leading-5 text-zinc-600">
-              {body || "Your notification message will appear here before sending."}
-            </p>
-            <div className="mt-4 rounded-md bg-zinc-100 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-              {AUDIENCES.find((item) => item.value === audience)?.label}
-            </div>
-          </aside>
+          {role === "ADMIN" ? (
+            <aside className="admin-surface h-fit p-6">
+              <h2 className="mb-5 flex items-center gap-2 text-sm font-black uppercase tracking-widest text-white"><Send size={17} className="text-brandRed" /> Send campaign</h2>
+              <div className="grid grid-cols-2 gap-2">{AUDIENCES.map((item) => <button key={item.value} onClick={() => setAudience(item.value)} className={`rounded-md border px-2 py-3 text-[9px] font-black uppercase ${audience === item.value ? "border-brandRed bg-brandRed text-white" : "border-white/10 text-zinc-400"}`}>{item.label}</button>)}</div>
+              <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="Notification title" className="admin-field mt-4" />
+              <textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={800} rows={5} placeholder="Message" className="admin-field mt-3 resize-none" />
+              <div className="admin-field mt-3 flex items-center gap-2"><ImageIcon size={15} /><input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Optional image URL" className="min-w-0 flex-1 bg-transparent outline-none" /></div>
+              {message ? <p className="mt-3 text-xs font-bold text-zinc-400">{message}</p> : null}
+              <button disabled={!title.trim() || !body.trim() || sending} onClick={sendNotification} className="mt-4 w-full rounded-md bg-brandRed px-5 py-4 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50">{sending ? "Sending..." : "Send notification"}</button>
+            </aside>
+          ) : null}
         </div>
       </div>
-    </main>
     </AdminLayout>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-400">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
+function notificationTarget(data: any, role: string | null) {
+  if (!data || typeof data !== "object") return null;
+  if (data.orderId) return `/orders/${data.orderId}`;
+  if (role === "PICKER") return null;
+  if (data.screen === "Staff") return "/staff";
+  if (data.screen === "Properties") return "/properties";
+  if (data.screen === "Services") return "/services";
+  if (data.screen === "Users") return "/users";
+  return null;
 }

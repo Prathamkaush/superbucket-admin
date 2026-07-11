@@ -10,8 +10,8 @@ const ROLE_HOME: Record<string, string> = {
 
 const ROLE_ALLOWED_PREFIXES: Record<string, string[]> = {
   ADMIN: ["/"],
-  SUB_ADMIN: ["/inventory", "/shops", "/staff", "/picker-reports"],
-  PICKER: ["/orders"],
+  SUB_ADMIN: ["/inventory", "/shops", "/staff", "/picker-reports", "/orders", "/notifications"],
+  PICKER: ["/orders", "/notifications"],
 };
 
 function decodeRole(token?: string) {

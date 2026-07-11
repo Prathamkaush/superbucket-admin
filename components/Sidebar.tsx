@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import BrandMark from "./BrandMark";
 import { clearStoredAdmin, getStoredAdminRole } from "@/lib/auth";
+import { api } from "@/lib/api";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -39,14 +40,21 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     setRole(getStoredAdminRole());
+    const loadUnread = () => api.get("/notifications/my", { params: { page: 1, limit: 1 } })
+      .then((response) => setUnreadNotifications(Number(response.data.unread || 0)))
+      .catch(() => undefined);
+    loadUnread();
+    const timer = window.setInterval(loadUnread, 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const canSee = (allowed: string[]) => Boolean(role && allowed.includes(role));
 
-  const LinkItem = (href: string, label: string, Icon: React.ElementType) => (
+  const LinkItem = (href: string, label: string, Icon: React.ElementType, badge = 0) => (
     <Link
       href={href}
       onClick={() => setOpen(false)}
@@ -61,6 +69,7 @@ export default function Sidebar() {
     >
       <Icon size={16} />
       <span>{label}</span>
+      {badge > 0 ? <span className="ml-auto rounded-full bg-brandRed px-2 py-0.5 text-[9px] text-white">{badge > 99 ? "99+" : badge}</span> : null}
     </Link>
   );
 
@@ -114,7 +123,7 @@ export default function Sidebar() {
           {canSee(["ADMIN"]) && LinkItem("/products", "Supplements", Dumbbell)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/inventory", "Inventory", ClipboardList)}
           {canSee(["SUB_ADMIN"]) && LinkItem("/shops", "Shop Settings", Store)}
-          {canSee(["ADMIN", "PICKER"]) && LinkItem("/orders", "Orders", ShoppingCart)}
+          {canSee(["ADMIN", "SUB_ADMIN", "PICKER"]) && LinkItem("/orders", "Orders", ShoppingCart)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/staff", "Staff", UsersRound)}
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/picker-reports", "Picker Reports", BarChart3)}
           {canSee(["ADMIN"]) && LinkItem("/homepage", "Edit Home", PenIcon)}
@@ -123,7 +132,7 @@ export default function Sidebar() {
           {canSee(["ADMIN"]) && LinkItem("/feedback", "Feedback", MessageSquare)}
           {canSee(["ADMIN"]) && LinkItem("/contacts", "Contacts", Phone)}
           {canSee(["ADMIN"]) && LinkItem("/users", "Users", PersonStanding)}
-          {canSee(["ADMIN"]) && LinkItem("/notifications", "Notifications", Bell)}
+          {canSee(["ADMIN", "SUB_ADMIN", "PICKER"]) && LinkItem("/notifications", "Notifications", Bell, unreadNotifications)}
           {canSee(["ADMIN"]) && LinkItem("/discounts", "Discounts", Percent)}
           {canSee(["ADMIN"]) && LinkItem("/trending", "Trending", Star)}
           {canSee(["ADMIN"]) && LinkItem("/reviews", "Reviews", Star)}
