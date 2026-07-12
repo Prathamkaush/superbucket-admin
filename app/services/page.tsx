@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { API_URL, api } from "@/lib/api";
 import AdminLayout from "@/components/AdminLayout";
+import { FiImage } from "react-icons/fi";
 
 type Package = { id: number; name: string; description?: string; price: string; durationMinutes: number; platformFeePercent: string; isActive: boolean };
-type Category = { id: number; name: string; slug: string; isActive: boolean; packages: Package[] };
+type Category = { id: number; name: string; slug: string; image?: string | null; isActive: boolean; packages: Package[] };
 type Provider = { id: number; status: string; city?: string; experienceYears: number; user: { name?: string; phone?: string; email?: string }; services: { category: Category }[] };
 type Booking = { id: number; bookingNumber: string; serviceName: string; status: string; scheduledAt: string; cancellationReason?: string | null; cancelledAt?: string | null; revisitReason?: string | null; revisitRequestedAt?: string | null; revisitAcceptedAt?: string | null; customer?: { name?: string | null; phone?: string | null }; provider?: { name?: string | null; phone?: string | null } | null };
 
@@ -16,6 +17,7 @@ export default function ServicesAdminPage() {
   const [tab, setTab] = useState<"catalog" | "providers" | "bookings">("catalog");
   const [error, setError] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", slug: "" });
+  const [categoryImage, setCategoryImage] = useState<File | null>(null);
   const [packageForm, setPackageForm] = useState({ categoryId: "", name: "", price: "", durationMinutes: "60", platformFeePercent: "20" });
 
   const load = useCallback(async () => {
@@ -38,8 +40,14 @@ export default function ServicesAdminPage() {
 
   const createCategory = async (event: React.FormEvent) => {
     event.preventDefault();
-    await api.post("/services/admin/categories", { ...categoryForm, sortOrder: catalog.length + 1 });
+    const form = new FormData();
+    form.append("name", categoryForm.name);
+    form.append("slug", categoryForm.slug);
+    form.append("sortOrder", String(catalog.length + 1));
+    if (categoryImage) form.append("image", categoryImage);
+    await api.post("/services/admin/categories", form);
     setCategoryForm({ name: "", slug: "" });
+    setCategoryImage(null);
     load();
   };
 
@@ -101,6 +109,12 @@ export default function ServicesAdminPage() {
                 <h2 className="text-lg font-black">Add service category</h2>
                 <input className="admin-field" placeholder="Category name" required value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
                 <input className="admin-field" placeholder="URL slug (e.g. appliance-repair)" required value={categoryForm.slug} onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-") })} />
+                <label className="admin-field flex cursor-pointer items-center gap-3">
+                  <FiImage className="shrink-0 text-brandRed" size={18} />
+                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-400">{categoryImage ? categoryImage.name : "Upload service category image"}</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={(event) => setCategoryImage(event.target.files?.[0] || null)} />
+                </label>
+                {categoryImage ? <img src={URL.createObjectURL(categoryImage)} alt="Service preview" className="h-36 w-full rounded-md object-cover" /> : null}
                 <button className="admin-red-button" type="submit">Create category</button>
               </form>
               <form className="admin-surface p-6 space-y-4" onSubmit={createPackage}>
@@ -122,7 +136,7 @@ export default function ServicesAdminPage() {
             {catalog.map((category) => (
               <section key={category.id} className="admin-surface overflow-hidden">
                 <div className="flex items-center justify-between border-b border-white/10 p-5">
-                  <div><h2 className="font-black text-lg">{category.name}</h2><p className="text-xs text-zinc-500">/{category.slug}</p></div>
+                  <div className="flex items-center gap-3">{category.image ? <img src={serviceImageUrl(category.image)} alt="" className="h-12 w-12 rounded-md object-cover" /> : null}<div><h2 className="font-black text-lg">{category.name}</h2><p className="text-xs text-zinc-500">/{category.slug}</p></div></div>
                   <span className={category.isActive ? "text-emerald-400" : "text-zinc-500"}>{category.isActive ? "ACTIVE" : "HIDDEN"}</span>
                 </div>
                 <div className="overflow-x-auto">
@@ -142,6 +156,11 @@ export default function ServicesAdminPage() {
       </div>
     </AdminLayout>
   );
+}
+
+function serviceImageUrl(value: string) {
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_URL.replace(/\/$/, "")}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
 function ProvidersTable({ providers, setProviderStatus }: { providers: Provider[]; setProviderStatus: (provider: Provider, status: "APPROVED" | "REJECTED" | "SUSPENDED") => void }) {
