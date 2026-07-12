@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, Image as ImageIcon, Send } from "lucide-react";
+import { Bell, CheckCheck, Image as ImageIcon, Send, Trash2 } from "lucide-react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { getStoredAdminRole } from "@/lib/auth";
@@ -61,6 +61,13 @@ export default function NotificationsPage() {
     setUnread(0);
   }
 
+  async function deleteNotification(item: any) {
+    if (!window.confirm("Delete this notification?")) return;
+    await api.delete(`/notifications/${item.id}`);
+    setItems((current) => current.filter((entry) => entry.id !== item.id));
+    if (!item.readAt) setUnread((value) => Math.max(0, value - 1));
+  }
+
   async function sendNotification() {
     if (!title.trim() || !body.trim() || sending) return;
     try {
@@ -102,7 +109,8 @@ export default function NotificationsPage() {
             {loading ? <div className="p-12 text-center text-xs font-black uppercase text-zinc-500">Loading notifications...</div> : items.length ? (
               <div className="divide-y divide-white/10">
                 {items.map((item) => (
-                  <button key={item.id} onClick={() => openNotification(item)} className={`block w-full p-5 text-left transition hover:bg-white/5 ${item.readAt ? "bg-transparent" : "bg-brandRed/10"}`}>
+                  <div key={item.id} className={`flex items-stretch transition hover:bg-white/5 ${item.readAt ? "bg-transparent" : "bg-brandRed/10"}`}>
+                  <button onClick={() => openNotification(item)} className="block min-w-0 flex-1 p-5 text-left">
                     <div className="flex items-start gap-3">
                       <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${item.readAt ? "bg-zinc-700" : "bg-brandRed"}`} />
                       <div className="min-w-0 flex-1">
@@ -112,6 +120,8 @@ export default function NotificationsPage() {
                       </div>
                     </div>
                   </button>
+                  <button onClick={() => deleteNotification(item)} aria-label="Delete notification" title="Delete notification" className="px-5 text-zinc-600 transition hover:bg-brandRed/15 hover:text-brandRed"><Trash2 size={17} /></button>
+                  </div>
                 ))}
               </div>
             ) : <div className="p-12 text-center text-xs font-black uppercase text-zinc-500">No notifications yet</div>}
