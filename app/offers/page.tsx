@@ -2,10 +2,11 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { api } from "@/lib/api";
+import { API_URL, api } from "@/lib/api";
 import {
   FiEdit3,
   FiGift,
+  FiImage,
   FiPlus,
   FiSave,
   FiTag,
@@ -35,7 +36,6 @@ const emptyForm = {
   code: "",
   icon: "gift",
   color: "#E30613",
-  imageUrl: "",
   sortOrder: "0",
   startsAt: "",
   expiresAt: "",
@@ -48,6 +48,8 @@ export default function OffersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [currentImage, setCurrentImage] = useState("");
 
   const loadOffers = async () => {
     setLoading(true);
@@ -68,10 +70,14 @@ export default function OffersPage() {
   const resetForm = () => {
     setEditingId(null);
     setForm(emptyForm);
+    setImage(null);
+    setCurrentImage("");
   };
 
   const editOffer = (offer: HomeOffer) => {
     setEditingId(offer.id);
+    setImage(null);
+    setCurrentImage(offer.imageUrl || "");
     setForm({
       title: offer.title || "",
       subtitle: offer.subtitle || "",
@@ -79,7 +85,6 @@ export default function OffersPage() {
       code: offer.code || "",
       icon: offer.icon || "gift",
       color: offer.color || "#E30613",
-      imageUrl: offer.imageUrl || "",
       sortOrder: String(offer.sortOrder || 0),
       startsAt: toDateInput(offer.startsAt),
       expiresAt: toDateInput(offer.expiresAt),
@@ -91,18 +96,17 @@ export default function OffersPage() {
     setSaving(true);
     setNotice("");
 
-    const payload = {
-      title: form.title,
-      subtitle: form.subtitle,
-      buttonLabel: form.buttonLabel,
-      code: form.code || null,
-      icon: form.icon || "gift",
-      color: form.color || "#E30613",
-      imageUrl: form.imageUrl || null,
-      sortOrder: Number(form.sortOrder || 0),
-      startsAt: form.startsAt || null,
-      expiresAt: form.expiresAt || null,
-    };
+    const payload = new FormData();
+    payload.append("title", form.title);
+    payload.append("subtitle", form.subtitle);
+    payload.append("buttonLabel", form.buttonLabel);
+    payload.append("code", form.code);
+    payload.append("icon", form.icon || "gift");
+    payload.append("color", form.color || "#E30613");
+    payload.append("sortOrder", String(Number(form.sortOrder || 0)));
+    if (form.startsAt) payload.append("startsAt", form.startsAt);
+    if (form.expiresAt) payload.append("expiresAt", form.expiresAt);
+    if (image) payload.append("image", image);
 
     try {
       if (editingId) {
@@ -243,13 +247,13 @@ export default function OffersPage() {
               </Field>
             </div>
 
-            <Field label="Image URL">
-              <input
-                className="admin-field text-black"
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="https://example.com/business-poster.jpg"
-              />
+            <Field label="Offer Image">
+              <label className="admin-field flex cursor-pointer items-center gap-3 text-black">
+                <FiImage className="shrink-0 text-brandRed" size={17} />
+                <span className="min-w-0 flex-1 truncate text-xs font-bold text-zinc-500">{image ? image.name : currentImage ? "Change current image" : "Upload offer image"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => setImage(event.target.files?.[0] || null)} />
+              </label>
+              {image || currentImage ? <img src={image ? URL.createObjectURL(image) : offerImageUrl(currentImage)} alt="Offer preview" className="mt-3 h-32 w-full rounded-md object-cover" /> : null}
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
@@ -292,7 +296,7 @@ export default function OffersPage() {
                   <div key={offer.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center">
                     {offer.imageUrl ? (
                       <img
-                        src={offer.imageUrl}
+                        src={offerImageUrl(offer.imageUrl)}
                         alt=""
                         className="h-12 w-12 shrink-0 rounded-md object-cover"
                       />
@@ -367,4 +371,10 @@ function toDateInput(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toISOString().slice(0, 16);
+}
+
+function offerImageUrl(value?: string | null) {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_URL.replace(/\/$/, "")}${value.startsWith("/") ? "" : "/"}${value}`;
 }
