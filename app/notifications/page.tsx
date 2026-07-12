@@ -23,7 +23,7 @@ export default function NotificationsPage() {
   const [audience, setAudience] = useState("ALL");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -66,11 +66,14 @@ export default function NotificationsPage() {
     try {
       setSending(true);
       setMessage("");
-      const response = await api.post("/admin/notifications/broadcast", {
-        audience, title: title.trim(), body: body.trim(), imageUrl: imageUrl.trim() || undefined,
-      });
+      const form = new FormData();
+      form.append("audience", audience);
+      form.append("title", title.trim());
+      form.append("body", body.trim());
+      if (image) form.append("image", image);
+      const response = await api.post("/admin/notifications/broadcast", form);
       setMessage(`Sent to ${response.data.recipients} recipient(s).`);
-      setTitle(""); setBody(""); setImageUrl("");
+      setTitle(""); setBody(""); setImage(null);
       await loadInbox(true);
     } catch (error: any) {
       setMessage(error?.response?.data?.message || "Could not send notification");
@@ -120,7 +123,11 @@ export default function NotificationsPage() {
               <div className="grid grid-cols-2 gap-2">{AUDIENCES.map((item) => <button key={item.value} onClick={() => setAudience(item.value)} className={`rounded-md border px-2 py-3 text-[9px] font-black uppercase ${audience === item.value ? "border-brandRed bg-brandRed text-white" : "border-white/10 text-zinc-400"}`}>{item.label}</button>)}</div>
               <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} placeholder="Notification title" className="admin-field mt-4" />
               <textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={800} rows={5} placeholder="Message" className="admin-field mt-3 resize-none" />
-              <div className="admin-field mt-3 flex items-center gap-2"><ImageIcon size={15} /><input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Optional image URL" className="min-w-0 flex-1 bg-transparent outline-none" /></div>
+              <label className="admin-field mt-3 flex cursor-pointer items-center gap-2">
+                <ImageIcon size={15} />
+                <span className="min-w-0 flex-1 truncate text-zinc-400">{image ? image.name : "Upload optional notification image"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => setImage(event.target.files?.[0] || null)} />
+              </label>
               {message ? <p className="mt-3 text-xs font-bold text-zinc-400">{message}</p> : null}
               <button disabled={!title.trim() || !body.trim() || sending} onClick={sendNotification} className="mt-4 w-full rounded-md bg-brandRed px-5 py-4 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50">{sending ? "Sending..." : "Send notification"}</button>
             </aside>
