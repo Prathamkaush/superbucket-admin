@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import DeliveryScheduleBadge from "@/components/order/DeliveryScheduleBadge";
 
 interface OrderQuickViewModalProps {
   order: any | null;
@@ -29,6 +30,7 @@ export default function OrderQuickViewModal({
         </h2>
 
         <div className="space-y-2 text-sm text-zinc-300">
+          <DeliveryScheduleBadge order={order} />
           <p>
             <span className="font-bold text-zinc-400">Status:</span>{" "}
             <span className="uppercase font-semibold">{order.status}</span>

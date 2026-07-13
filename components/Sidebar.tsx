@@ -28,6 +28,7 @@ import {
   Store,
   Bell,
   BadgePercent,
+  Megaphone,
 } from "lucide-react";
 import BrandMark from "./BrandMark";
 import { clearStoredAdmin, getStoredAdminRole } from "@/lib/auth";
@@ -128,6 +129,7 @@ export default function Sidebar() {
           {canSee(["ADMIN", "SUB_ADMIN"]) && LinkItem("/picker-reports", "Picker Reports", BarChart3)}
           {canSee(["ADMIN"]) && LinkItem("/homepage", "Edit Home", PenIcon)}
           {canSee(["ADMIN"]) && LinkItem("/offers", "Offers", BadgePercent)}
+          {canSee(["ADMIN"]) && LinkItem("/business-ads", "Business Ads", Megaphone)}
           {canSee(["ADMIN"]) && LinkItem("/coupons", "Coupons", SplinePointer)}
           {canSee(["ADMIN"]) && LinkItem("/feedback", "Feedback", MessageSquare)}
           {canSee(["ADMIN"]) && LinkItem("/contacts", "Contacts", Phone)}

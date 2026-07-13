@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import OrderQuickViewModal from "@/components/modals/OrderQuickViewModal";
 import OrderCardSkeleton from "@/components/skeletons/OrderCardSkeleton";
 import { FiCalendar, FiPackage, FiShoppingCart } from "react-icons/fi";
+import DeliveryScheduleBadge, { isScheduledDeliveryPending } from "@/components/order/DeliveryScheduleBadge";
+import { getStoredAdminRole } from "@/lib/auth";
 
 const STATUS_FILTERS = [
   { label: "All", value: "" },
@@ -23,6 +25,7 @@ export default function OrdersPage() {
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<"" | "INSTANT" | "SCHEDULED">("");
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<
     "today" | "yesterday" | "week" | "custom" | ""
@@ -30,6 +33,11 @@ export default function OrdersPage() {
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getStoredAdminRole());
+  }, []);
 
   const getDateRange = () => {
     const today = new Date();
@@ -73,6 +81,7 @@ export default function OrdersPage() {
       params: {
         page,
         status,
+        deliveryMode: deliveryMode || undefined,
         fromDate: from || undefined,
         toDate: to || undefined,
       },
@@ -85,7 +94,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, status, dateFilter, fromDate, toDate]);
+  }, [page, status, deliveryMode, dateFilter, fromDate, toDate]);
 
   const statusColor = (s: string) =>
     ({
@@ -143,6 +152,29 @@ export default function OrdersPage() {
                 }`}
               >
                 {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3 flex-wrap items-center">
+            {[
+              { label: "All Deliveries", value: "" },
+              { label: "Instant", value: "INSTANT" },
+              { label: "Scheduled", value: "SCHEDULED" },
+            ].map((mode) => (
+              <button
+                key={mode.value}
+                onClick={() => {
+                  setDeliveryMode(mode.value as "" | "INSTANT" | "SCHEDULED");
+                  setPage(1);
+                }}
+                className={`px-3 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition ${
+                  deliveryMode === mode.value
+                    ? "bg-amber-500 text-zinc-950"
+                    : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {mode.label}
               </button>
             ))}
           </div>
@@ -292,6 +324,10 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
+                <div className="mt-4">
+                  <DeliveryScheduleBadge order={o} compact />
+                </div>
+
                 <div className="mt-3 text-[11px] font-bold uppercase tracking-widest text-gray-400">
                   <div>Items: Rs. {o.totalAmount}</div>
                   {o.shippingCharge !== undefined && (
@@ -312,14 +348,22 @@ export default function OrdersPage() {
 
                   {nextAction(o.status) ? (
                     <button
-                      className="px-5 py-3 bg-white text-brandBlack rounded-md hover:bg-brandRed hover:text-white text-[10px] font-black uppercase tracking-widest transition-all"
+                      className="px-5 py-3 bg-white text-brandBlack rounded-md hover:bg-brandRed hover:text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                      disabled={
+                        role === "PICKER" &&
+                        nextAction(o.status)?.status === "SHIPPED" &&
+                        isScheduledDeliveryPending(o)
+                      }
+                      title={isScheduledDeliveryPending(o) ? "This order can be dispatched at its selected delivery slot" : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
                         const action = nextAction(o.status);
                         if (action) updateOrderStatus(o.id, action.status);
                       }}
                     >
-                      {nextAction(o.status)?.label}
+                      {role === "PICKER" && nextAction(o.status)?.status === "SHIPPED" && isScheduledDeliveryPending(o)
+                        ? "Waiting for slot"
+                        : nextAction(o.status)?.label}
                     </button>
                   ) : null}
                 </div>

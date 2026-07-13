@@ -8,6 +8,7 @@ import TrackingTimeline from "@/components/TrackingTimeline";
 import OrderStatusTimeline from "@/components/order/OrderStatusTimeline";
 import { FiPackage, FiTruck, FiMapPin, FiCreditCard, FiClock } from "react-icons/fi";
 import { getStoredAdminRole } from "@/lib/auth";
+import DeliveryScheduleBadge, { isScheduledDeliveryPending } from "@/components/order/DeliveryScheduleBadge";
 
 /* ================= ENHANCED STATUS BADGE ================= */
 const StatusBadge = ({ status }: { status: string }) => {
@@ -101,6 +102,8 @@ export default function OrderDetailsPage() {
           <div className="w-8 h-8 border-2 border-brandRed border-t-transparent rounded-full animate-spin" />
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Order Data...</p>
         </div>
+
+        <DeliveryScheduleBadge order={order} />
       </AdminLayout>
     );
   }
@@ -210,11 +213,11 @@ export default function OrderDetailsPage() {
 
                     {order.status === "CONFIRMED" && !order.trackingId && (
                         <button
-                            disabled={actionLoading}
+                            disabled={actionLoading || (role === "PICKER" && isScheduledDeliveryPending(order))}
                             onClick={shipOrder}
-                            className="flex-1 rounded-md bg-brandRed py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-white hover:text-brandBlack"
+                            className="flex-1 rounded-md bg-brandRed py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-white hover:text-brandBlack disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                         >
-                            Ship with Delhivery
+                            {role === "PICKER" && isScheduledDeliveryPending(order) ? "Waiting for delivery slot" : "Ship with Delhivery"}
                         </button>
                     )}
                 </div>
