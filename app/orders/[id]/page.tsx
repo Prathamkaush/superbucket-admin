@@ -103,7 +103,6 @@ export default function OrderDetailsPage() {
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Order Data...</p>
         </div>
 
-        <DeliveryScheduleBadge order={order} />
       </AdminLayout>
     );
   }
@@ -153,15 +152,15 @@ export default function OrderDetailsPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-400 font-bold uppercase text-[10px]">Items Subtotal</span>
-                <span className="font-bold text-white">₹{order.totalAmount.toLocaleString()}</span>
+                <span className="font-bold text-white">₹{formatMoney(order.totalAmount)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-400 font-bold uppercase text-[10px]">Shipping</span>
-                <span className="font-bold text-white">₹{order.shippingCharge.toLocaleString()}</span>
+                <span className="font-bold text-white">₹{formatMoney(order.shippingCharge)}</span>
               </div>
               <div className="flex justify-between text-xl pt-4 border-t border-white/5">
                 <span className="font-black uppercase tracking-tighter text-white">Net Payable</span>
-                <span className="font-black text-brandRed">₹{order.finalAmount.toLocaleString()}</span>
+                <span className="font-black text-brandRed">₹{formatMoney(order.finalAmount ?? order.totalAmount)}</span>
               </div>
             </div>
           </div>
@@ -192,6 +191,8 @@ export default function OrderDetailsPage() {
             deliveredAt={order.deliveredAt}
           />
         </div>
+
+        <DeliveryScheduleBadge order={order} />
 
         {/* ACTIONS SECTION */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -243,13 +244,13 @@ export default function OrderDetailsPage() {
                     <FiPackage className="text-brandRed" /> Manifest Items
                 </h2>
                 <div className="divide-y divide-white/5">
-                    {order.items.map((item: any) => (
+                    {(order.items || []).map((item: any) => (
                         <div key={item.id} className="flex justify-between py-4 first:pt-0 last:pb-0">
                             <div>
-                                <p className="text-xs font-black uppercase tracking-tight text-white">{item.product.title}</p>
+                                <p className="text-xs font-black uppercase tracking-tight text-white">{item.product?.title || item.productName || `Product #${item.productId || item.id}`}</p>
                                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Quantity: {item.quantity} × ₹{item.price}</p>
                             </div>
-                            <span className="text-sm font-black text-white">₹{(item.quantity * item.price).toLocaleString()}</span>
+                            <span className="text-sm font-black text-white">₹{formatMoney(Number(item.quantity || 0) * Number(item.price || 0))}</span>
                         </div>
                     ))}
                 </div>
@@ -267,4 +268,11 @@ export default function OrderDetailsPage() {
       </div>
     </AdminLayout>
   );
+}
+
+function formatMoney(value: unknown) {
+  const amount = Number(value || 0);
+  return Number.isFinite(amount)
+    ? amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })
+    : "0";
 }

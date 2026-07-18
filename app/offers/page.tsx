@@ -20,6 +20,7 @@ type HomeOffer = {
   subtitle: string;
   buttonLabel?: string | null;
   code?: string | null;
+  phoneNumber?: string | null;
   icon?: string | null;
   color?: string | null;
   imageUrl?: string | null;
@@ -34,6 +35,7 @@ const emptyForm = {
   subtitle: "",
   buttonLabel: "Claim",
   code: "",
+  phoneNumber: "",
   icon: "gift",
   color: "#E30613",
   sortOrder: "0",
@@ -83,6 +85,7 @@ export default function OffersPage() {
       subtitle: offer.subtitle || "",
       buttonLabel: offer.buttonLabel || "Claim",
       code: offer.code || "",
+      phoneNumber: offer.phoneNumber || "",
       icon: offer.icon || "gift",
       color: offer.color || "#E30613",
       sortOrder: String(offer.sortOrder || 0),
@@ -101,6 +104,7 @@ export default function OffersPage() {
     payload.append("subtitle", form.subtitle);
     payload.append("buttonLabel", form.buttonLabel);
     payload.append("code", form.code);
+    payload.append("phoneNumber", form.phoneNumber);
     payload.append("icon", form.icon || "gift");
     payload.append("color", form.color || "#E30613");
     payload.append("sortOrder", String(Number(form.sortOrder || 0)));
@@ -196,7 +200,7 @@ export default function OffersPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <Field label="Button">
                 <input
                   className="admin-field text-black"
@@ -211,6 +215,14 @@ export default function OffersPage() {
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                   placeholder="FIRST10"
+                />
+              </Field>
+              <Field label="Phone Number">
+                <input
+                  className="admin-field text-black"
+                  value={form.phoneNumber}
+                  onChange={(e) => setForm({ ...form, phoneNumber: e.target.value.replace(/[^\d+]/g, "") })}
+                  placeholder="+919876543210"
                 />
               </Field>
             </div>
@@ -323,6 +335,7 @@ export default function OffersPage() {
                           Code: {offer.code}
                         </p>
                       )}
+                      {offer.phoneNumber && <p className="mt-1 text-[10px] font-black text-brandBlue">Call: {offer.phoneNumber}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button

@@ -9,12 +9,14 @@ type Package = { id: number; name: string; description?: string; price: string; 
 type Category = { id: number; name: string; slug: string; image?: string | null; isActive: boolean; packages: Package[] };
 type Provider = { id: number; status: string; city?: string; experienceYears: number; user: { name?: string; phone?: string; email?: string }; services: { category: Category }[] };
 type Booking = { id: number; bookingNumber: string; serviceName: string; status: string; scheduledAt: string; cancellationReason?: string | null; cancelledAt?: string | null; revisitReason?: string | null; revisitRequestedAt?: string | null; revisitAcceptedAt?: string | null; customer?: { name?: string | null; phone?: string | null }; provider?: { name?: string | null; phone?: string | null } | null };
+type Extension = { id: number; serviceName: string; customerName: string; problemImage1: string; problemImage2: string; solvedImage1: string; solvedImage2: string; durationMinutes: number; charge: string; createdAt: string; booking: Booking };
 
 export default function ServicesAdminPage() {
   const [catalog, setCatalog] = useState<Category[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [tab, setTab] = useState<"catalog" | "providers" | "bookings">("catalog");
+  const [extensions, setExtensions] = useState<Extension[]>([]);
+  const [tab, setTab] = useState<"catalog" | "providers" | "bookings" | "extended">("catalog");
   const [error, setError] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", slug: "" });
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
@@ -23,14 +25,16 @@ export default function ServicesAdminPage() {
   const load = useCallback(async () => {
     try {
       setError("");
-      const [catalogResult, providerResult, bookingResult] = await Promise.all([
+      const [catalogResult, providerResult, bookingResult, extensionResult] = await Promise.all([
         api.get("/services/admin/catalog"),
         api.get("/services/admin/providers"),
         api.get("/services/admin/bookings"),
+        api.get("/services/admin/extensions"),
       ]);
       setCatalog(catalogResult.data);
       setProviders(providerResult.data);
       setBookings(bookingResult.data || []);
+      setExtensions(extensionResult.data || []);
     } catch (e: any) {
       setError(e?.response?.data?.message || e.message || "Unable to load services");
     }
@@ -100,6 +104,7 @@ export default function ServicesAdminPage() {
           <button className={tab === "catalog" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("catalog")}>Catalog & Pricing</button>
           <button className={tab === "providers" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("providers")}>Providers ({providers.filter((p) => p.status === "PENDING").length} pending)</button>
           <button className={tab === "bookings" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
+          <button className={tab === "extended" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("extended")}>Extended ({extensions.length})</button>
         </div>
 
         {tab === "catalog" ? (
@@ -150,12 +155,30 @@ export default function ServicesAdminPage() {
           </div>
         ) : tab === "providers" ? (
           <ProvidersTable providers={providers} setProviderStatus={setProviderStatus} />
-        ) : (
+        ) : tab === "bookings" ? (
           <BookingsTable bookings={bookings} />
+        ) : (
+          <ExtensionsTable extensions={extensions} />
         )}
       </div>
     </AdminLayout>
   );
+}
+
+function ExtensionsTable({ extensions }: { extensions: Extension[] }) {
+  return <div className="space-y-5">
+    {extensions.map((item) => <section key={item.id} className="admin-surface p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div><p className="text-xs font-black uppercase tracking-wider text-brandRed">{item.booking.bookingNumber}</p><h2 className="mt-1 text-xl font-black">{item.serviceName}</h2><p className="mt-1 text-sm text-zinc-400">Customer: {item.customerName} · Provider: {item.booking.provider?.name || "Provider"}</p></div>
+        <div className="text-right"><p className="text-xl font-black text-emerald-400">Rs {Number(item.charge).toFixed(0)}</p><p className="text-xs text-zinc-500">{item.durationMinutes} minutes</p></div>
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {[item.problemImage1, item.problemImage2, item.solvedImage1, item.solvedImage2].map((image, index) => <a key={image} href={serviceImageUrl(image)} target="_blank" rel="noreferrer"><img src={serviceImageUrl(image)} alt={index < 2 ? `Problem ${index + 1}` : `Solved ${index - 1}`} className="h-40 w-full rounded-lg object-cover" /><p className="mt-1 text-center text-xs font-bold text-zinc-400">{index < 2 ? `Problem ${index + 1}` : `Solved ${index - 1}`}</p></a>)}
+      </div>
+      <p className="mt-4 text-xs text-zinc-500">Submitted {new Date(item.createdAt).toLocaleString()}</p>
+    </section>)}
+    {!extensions.length ? <div className="admin-surface p-10 text-center text-zinc-400">No extended services submitted yet.</div> : null}
+  </div>;
 }
 
 function serviceImageUrl(value: string) {
