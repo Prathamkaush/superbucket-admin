@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import AdminLoader from "@/components/AdminLoader";
 import { api } from "@/lib/api";
-import { FiCheckCircle, FiPhoneCall, FiRefreshCw, FiSave, FiSettings } from "react-icons/fi";
+import { FiCheckCircle, FiDollarSign, FiPhoneCall, FiRefreshCw, FiSave, FiSettings } from "react-icons/fi";
 
 type Notice = {
   type: "success" | "error";
@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [address, setAddress] = useState("");
   const [maintenance, setMaintenance] = useState(false);
   const [deliverySlotTimes, setDeliverySlotTimes] = useState("");
+  const [deliveryChargeUpTo1000, setDeliveryChargeUpTo1000] = useState("33");
 
   const loadSettings = async () => {
     try {
@@ -37,6 +38,7 @@ export default function SettingsPage() {
       setAddress(safeText(settings.address));
       setMaintenance(Boolean(settings.maintenanceMode));
       setDeliverySlotTimes((settings.deliverySlotTimes || []).join(", "));
+      setDeliveryChargeUpTo1000(safeText(settings.deliveryChargeUpTo1000 ?? 33));
     } catch (error) {
       console.error("Error loading settings:", error);
       setNotice({ type: "error", text: "Unable to load settings." });
@@ -62,6 +64,7 @@ export default function SettingsPage() {
       await api.patch("/settings/store", storeForm);
       await api.patch("/settings/general", {
         maintenanceMode: maintenance,
+        deliveryChargeUpTo1000: Number(deliveryChargeUpTo1000),
         deliverySlotTimes: deliverySlotTimes
           .split(",")
           .map((value) => value.trim())
@@ -193,6 +196,39 @@ export default function SettingsPage() {
 
               <p className="mt-4 text-xs font-semibold leading-5 text-zinc-500">
                 When enabled, customers see a maintenance screen with the support email and phone above.
+              </p>
+            </section>
+
+            <section className="rounded-md border border-zinc-200 bg-white p-6 shadow-sm xl:col-span-2">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brandRed/10 text-brandRed">
+                  <FiDollarSign size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-widest text-brandBlack">
+                    Delivery Partner Charge
+                  </h2>
+                  <p className="text-xs font-semibold text-zinc-500">
+                    Applied to product orders with an item subtotal from Rs 1 through Rs 1,000.
+                  </p>
+                </div>
+              </div>
+
+              <div className="max-w-sm">
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-zinc-600">Fixed charge (Rs)</label>
+                <input
+                  className="admin-field text-black"
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="1"
+                  required
+                  value={deliveryChargeUpTo1000}
+                  onChange={(event) => setDeliveryChargeUpTo1000(event.target.value)}
+                />
+              </div>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                Example: with a Rs 350 product subtotal and a Rs 33 charge, the customer pays Rs 383 before discounts and the delivery partner earns Rs 33. Product orders above Rs 1,000 receive free delivery.
               </p>
             </section>
 

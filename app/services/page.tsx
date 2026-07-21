@@ -5,10 +5,9 @@ import { API_URL, api } from "@/lib/api";
 import AdminLayout from "@/components/AdminLayout";
 import { FiImage } from "react-icons/fi";
 
-type Package = { id: number; name: string; description?: string; price: string; durationMinutes: number; platformFeePercent: string; isActive: boolean };
-type Category = { id: number; name: string; slug: string; image?: string | null; isActive: boolean; packages: Package[] };
+type Category = { id: number; name: string; slug: string; image?: string | null; isActive: boolean };
 type Provider = { id: number; status: string; city?: string; experienceYears: number; user: { name?: string; phone?: string; email?: string }; services: { category: Category }[] };
-type Booking = { id: number; bookingNumber: string; serviceName: string; status: string; scheduledAt: string; cancellationReason?: string | null; cancelledAt?: string | null; revisitReason?: string | null; revisitRequestedAt?: string | null; revisitAcceptedAt?: string | null; customer?: { name?: string | null; phone?: string | null }; provider?: { name?: string | null; phone?: string | null } | null };
+type Booking = { id: number; bookingNumber: string; serviceName: string; status: string; scheduledAt: string; customerNote?: string | null; quoteAmount?: string | null; paidAt?: string | null; beforeImages?: string[] | null; afterImages?: string[] | null; cancellationReason?: string | null; cancelledAt?: string | null; revisitReason?: string | null; revisitRequestedAt?: string | null; revisitAcceptedAt?: string | null; customer?: { name?: string | null; phone?: string | null }; provider?: { name?: string | null; phone?: string | null } | null };
 type Extension = { id: number; serviceName: string; customerName: string; problemImage1: string; problemImage2: string; solvedImage1: string; solvedImage2: string; durationMinutes: number; charge: string; createdAt: string; booking: Booking };
 
 export default function ServicesAdminPage() {
@@ -20,7 +19,6 @@ export default function ServicesAdminPage() {
   const [error, setError] = useState("");
   const [categoryForm, setCategoryForm] = useState({ name: "", slug: "" });
   const [categoryImage, setCategoryImage] = useState<File | null>(null);
-  const [packageForm, setPackageForm] = useState({ categoryId: "", name: "", price: "", durationMinutes: "60", platformFeePercent: "20" });
 
   const load = useCallback(async () => {
     try {
@@ -55,31 +53,6 @@ export default function ServicesAdminPage() {
     load();
   };
 
-  const createPackage = async (event: React.FormEvent) => {
-    event.preventDefault();
-    await api.post("/services/admin/packages", {
-      ...packageForm,
-      categoryId: Number(packageForm.categoryId),
-      price: Number(packageForm.price),
-      durationMinutes: Number(packageForm.durationMinutes),
-      platformFeePercent: Number(packageForm.platformFeePercent),
-    });
-    setPackageForm({ categoryId: "", name: "", price: "", durationMinutes: "60", platformFeePercent: "20" });
-    load();
-  };
-
-  const editPrice = async (item: Package) => {
-    const value = window.prompt(`Set customer price for ${item.name}`, String(item.price));
-    if (value === null || !Number.isFinite(Number(value)) || Number(value) < 0) return;
-    await api.patch(`/services/admin/packages/${item.id}`, { price: Number(value) });
-    load();
-  };
-
-  const togglePackage = async (item: Package) => {
-    await api.patch(`/services/admin/packages/${item.id}`, { isActive: !item.isActive });
-    load();
-  };
-
   const setProviderStatus = async (provider: Provider, status: "APPROVED" | "REJECTED" | "SUSPENDED") => {
     const rejectionReason = status === "REJECTED" ? window.prompt("Reason for rejection") || "Profile requirements not met" : undefined;
     await api.patch(`/services/admin/providers/${provider.id}/status`, { status, rejectionReason });
@@ -91,9 +64,9 @@ export default function ServicesAdminPage() {
       <div className="admin-page">
         <div className="admin-hero">
           <div>
-            <p className="admin-page-kicker">Fixed-price marketplace</p>
+            <p className="admin-page-kicker">Request and quote marketplace</p>
             <h1 className="admin-hero-title">Home <span className="text-brandRed">Services</span></h1>
-            <p className="admin-hero-subtitle">Manage customer pricing, platform fees, service availability, provider approvals, and revisit requests.</p>
+            <p className="admin-hero-subtitle">Monitor requests, provider quotes, completed-work evidence, payments, and approvals. No commission is charged.</p>
           </div>
           <button onClick={load} className="admin-dark-button">Refresh</button>
         </div>
@@ -101,7 +74,7 @@ export default function ServicesAdminPage() {
         {error && <div className="admin-surface border border-red-500/40 p-4 text-red-300">{error}</div>}
 
         <div className="flex flex-wrap gap-2">
-          <button className={tab === "catalog" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("catalog")}>Catalog & Pricing</button>
+          <button className={tab === "catalog" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("catalog")}>Service Categories</button>
           <button className={tab === "providers" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("providers")}>Providers ({providers.filter((p) => p.status === "PENDING").length} pending)</button>
           <button className={tab === "bookings" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
           <button className={tab === "extended" ? "admin-red-button" : "admin-dark-button"} onClick={() => setTab("extended")}>Extended ({extensions.length})</button>
@@ -109,7 +82,7 @@ export default function ServicesAdminPage() {
 
         {tab === "catalog" ? (
           <div className="space-y-6">
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,560px)_1fr]">
               <form className="admin-surface p-6 space-y-4" onSubmit={createCategory}>
                 <h2 className="text-lg font-black">Add service category</h2>
                 <input className="admin-field" placeholder="Category name" required value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
@@ -122,36 +95,16 @@ export default function ServicesAdminPage() {
                 {categoryImage ? <img src={URL.createObjectURL(categoryImage)} alt="Service preview" className="h-36 w-full rounded-md object-cover" /> : null}
                 <button className="admin-red-button" type="submit">Create category</button>
               </form>
-              <form className="admin-surface p-6 space-y-4" onSubmit={createPackage}>
-                <h2 className="text-lg font-black">Add fixed-price package</h2>
-                <select className="admin-field" required value={packageForm.categoryId} onChange={(e) => setPackageForm({ ...packageForm, categoryId: e.target.value })}>
-                  <option value="">Choose category</option>
-                  {catalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                </select>
-                <input className="admin-field" placeholder="Package name" required value={packageForm.name} onChange={(e) => setPackageForm({ ...packageForm, name: e.target.value })} />
-                <div className="grid grid-cols-3 gap-3">
-                  <input className="admin-field" type="number" min="0" placeholder="Price Rs" required value={packageForm.price} onChange={(e) => setPackageForm({ ...packageForm, price: e.target.value })} />
-                  <input className="admin-field" type="number" min="15" placeholder="Minutes" required value={packageForm.durationMinutes} onChange={(e) => setPackageForm({ ...packageForm, durationMinutes: e.target.value })} />
-                  <input className="admin-field" type="number" min="0" max="100" placeholder="Fee %" required value={packageForm.platformFeePercent} onChange={(e) => setPackageForm({ ...packageForm, platformFeePercent: e.target.value })} />
-                </div>
-                <button className="admin-red-button" type="submit">Create package</button>
-              </form>
+              <div className="admin-surface p-6">
+                <h2 className="text-lg font-black">Provider-controlled pricing</h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400">Admin only manages service categories. Providers discuss each request with the customer and send their own quote; package prices cannot be created or changed here.</p>
+              </div>
             </div>
 
-            {catalog.map((category) => (
-              <section key={category.id} className="admin-surface overflow-hidden">
-                <div className="flex items-center justify-between border-b border-white/10 p-5">
-                  <div className="flex items-center gap-3">{category.image ? <img src={serviceImageUrl(category.image)} alt="" className="h-12 w-12 rounded-md object-cover" /> : null}<div><h2 className="font-black text-lg">{category.name}</h2><p className="text-xs text-zinc-500">/{category.slug}</p></div></div>
-                  <span className={category.isActive ? "text-emerald-400" : "text-zinc-500"}>{category.isActive ? "ACTIVE" : "HIDDEN"}</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead><tr className="admin-table-head"><th className="admin-th text-left">Package</th><th className="admin-th text-center">Duration</th><th className="admin-th text-center">Customer price</th><th className="admin-th text-center">Provider earning</th><th className="admin-th text-right">Actions</th></tr></thead>
-                    <tbody>{category.packages.map((item) => { const earning = Number(item.price) * (1 - Number(item.platformFeePercent) / 100); return <tr key={item.id} className="admin-row"><td className="admin-td font-bold">{item.name}</td><td className="admin-td text-center">{item.durationMinutes} min</td><td className="admin-td text-center font-black text-brandRed">Rs {Number(item.price).toFixed(0)}</td><td className="admin-td text-center text-emerald-400">Rs {earning.toFixed(0)}</td><td className="admin-td text-right space-x-2"><button className="admin-dark-button" onClick={() => editPrice(item)}>Edit price</button><button className="admin-dark-button" onClick={() => togglePackage(item)}>{item.isActive ? "Hide" : "Activate"}</button></td></tr>; })}</tbody>
-                  </table>
-                </div>
-              </section>
-            ))}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {catalog.map((category) => <section key={category.id} className="admin-surface flex items-center gap-4 p-5">{category.image ? <img src={serviceImageUrl(category.image)} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/5"><FiImage className="text-zinc-500" size={22} /></div>}<div className="min-w-0 flex-1"><h2 className="truncate text-lg font-black">{category.name}</h2><p className="truncate text-xs text-zinc-500">/{category.slug}</p><p className={`mt-2 text-xs font-black ${category.isActive ? "text-emerald-400" : "text-zinc-500"}`}>{category.isActive ? "ACTIVE" : "HIDDEN"}</p></div></section>)}
+            </div>
+            {!catalog.length ? <div className="admin-surface p-10 text-center text-zinc-400">No service categories created yet.</div> : null}
           </div>
         ) : tab === "providers" ? (
           <ProvidersTable providers={providers} setProviderStatus={setProviderStatus} />
@@ -211,7 +164,7 @@ function BookingsTable({ bookings }: { bookings: Booking[] }) {
   return (
     <div className="admin-table overflow-x-auto">
       <table className="w-full">
-        <thead><tr className="admin-table-head"><th className="admin-th text-left">Booking</th><th className="admin-th text-left">Customer</th><th className="admin-th text-left">Provider</th><th className="admin-th text-center">Status</th><th className="admin-th text-left">Issue / Reason</th></tr></thead>
+        <thead><tr className="admin-table-head"><th className="admin-th text-left">Request</th><th className="admin-th text-left">Customer</th><th className="admin-th text-left">Provider</th><th className="admin-th text-center">Status</th><th className="admin-th text-left">Quote / Payment</th><th className="admin-th text-left">Issue & Work Evidence</th></tr></thead>
         <tbody>
           {bookings.map((booking) => (
             <tr key={booking.id} className="admin-row">
@@ -219,13 +172,14 @@ function BookingsTable({ bookings }: { bookings: Booking[] }) {
               <td className="admin-td"><p className="font-semibold">{booking.customer?.name || "Customer"}</p><p className="text-xs text-zinc-500">{booking.customer?.phone || "No phone"}</p></td>
               <td className="admin-td"><p className="font-semibold">{booking.provider?.name || "Unassigned"}</p><p className="text-xs text-zinc-500">{booking.provider?.phone || ""}</p></td>
               <td className="admin-td text-center font-black">{booking.status.replaceAll("_", " ")}</td>
+              <td className="admin-td"><p className="font-black text-emerald-600">{booking.quoteAmount ? `Rs ${Number(booking.quoteAmount).toFixed(0)}` : "Awaiting quote"}</p><p className="text-xs text-zinc-500">{booking.paidAt ? `Paid ${new Date(booking.paidAt).toLocaleString()}` : "Not paid"} · 0% commission</p></td>
               <td className="admin-td">
                 {booking.cancellationReason ? (
                   <div><p className="font-bold text-red-600">{booking.cancellationReason}</p><p className="text-xs text-zinc-500">Cancelled {booking.cancelledAt ? new Date(booking.cancelledAt).toLocaleString() : ""}</p></div>
                 ) : booking.revisitReason ? (
                   <div><p className="font-bold text-amber-600">{booking.revisitReason}</p><p className="text-xs text-zinc-500">Requested {booking.revisitRequestedAt ? new Date(booking.revisitRequestedAt).toLocaleString() : ""}{booking.revisitAcceptedAt ? ` - Accepted ${new Date(booking.revisitAcceptedAt).toLocaleString()}` : ""}</p></div>
                 ) : (
-                  <span className="text-xs text-zinc-400">No issue reported</span>
+                  <div><p className="text-xs text-zinc-500">{booking.customerNote || "No issue description"}</p>{[...(booking.beforeImages || []).map((image) => ({ image, label: "Before" })), ...(booking.afterImages || []).map((image) => ({ image, label: "After" }))].length ? <div className="mt-2 flex gap-2">{[...(booking.beforeImages || []).map((image) => ({ image, label: "Before" })), ...(booking.afterImages || []).map((image) => ({ image, label: "After" }))].map((item, index) => <a key={`${item.image}-${index}`} href={serviceImageUrl(item.image)} target="_blank" rel="noreferrer"><img src={serviceImageUrl(item.image)} alt={item.label} className="h-12 w-12 rounded-md object-cover" /></a>)}</div> : <span className="mt-1 block text-xs text-zinc-400">No completion photos yet</span>}</div>
                 )}
               </td>
             </tr>
