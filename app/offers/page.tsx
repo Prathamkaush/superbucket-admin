@@ -7,6 +7,7 @@ import {
   FiEdit3,
   FiGift,
   FiImage,
+  FiMessageCircle,
   FiPlus,
   FiSave,
   FiTag,
@@ -21,6 +22,7 @@ type HomeOffer = {
   buttonLabel?: string | null;
   code?: string | null;
   phoneNumber?: string | null;
+  whatsappNumber?: string | null;
   icon?: string | null;
   color?: string | null;
   imageUrl?: string | null;
@@ -36,6 +38,7 @@ const emptyForm = {
   buttonLabel: "Claim",
   code: "",
   phoneNumber: "",
+  whatsappNumber: "",
   icon: "gift",
   color: "#E30613",
   sortOrder: "0",
@@ -86,6 +89,7 @@ export default function OffersPage() {
       buttonLabel: offer.buttonLabel || "Claim",
       code: offer.code || "",
       phoneNumber: offer.phoneNumber || "",
+      whatsappNumber: offer.whatsappNumber || "",
       icon: offer.icon || "gift",
       color: offer.color || "#E30613",
       sortOrder: String(offer.sortOrder || 0),
@@ -105,6 +109,7 @@ export default function OffersPage() {
     payload.append("buttonLabel", form.buttonLabel);
     payload.append("code", form.code);
     payload.append("phoneNumber", form.phoneNumber);
+    payload.append("whatsappNumber", form.whatsappNumber);
     payload.append("icon", form.icon || "gift");
     payload.append("color", form.color || "#E30613");
     payload.append("sortOrder", String(Number(form.sortOrder || 0)));
@@ -200,7 +205,7 @@ export default function OffersPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Button">
                 <input
                   className="admin-field text-black"
@@ -224,6 +229,17 @@ export default function OffersPage() {
                   onChange={(e) => setForm({ ...form, phoneNumber: e.target.value.replace(/[^\d+]/g, "") })}
                   placeholder="+919876543210"
                 />
+              </Field>
+              <Field label="WhatsApp Number">
+                <div className="relative">
+                  <FiMessageCircle className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" size={15} />
+                  <input
+                    className="admin-field pl-9 text-black"
+                    value={form.whatsappNumber}
+                    onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value.replace(/[^\d+]/g, "") })}
+                    placeholder="+919876543210"
+                  />
+                </div>
               </Field>
             </div>
 
@@ -265,7 +281,12 @@ export default function OffersPage() {
                 <span className="min-w-0 flex-1 truncate text-xs font-bold text-zinc-500">{image ? image.name : currentImage ? "Change current image" : "Upload offer image"}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(event) => setImage(event.target.files?.[0] || null)} />
               </label>
-              {image || currentImage ? <img src={image ? URL.createObjectURL(image) : offerImageUrl(currentImage)} alt="Offer preview" className="mt-3 h-32 w-full rounded-md object-cover" /> : null}
+              {image || currentImage ? (
+                <div className="mt-3 aspect-[4/5] w-full overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
+                  <img src={image ? URL.createObjectURL(image) : offerImageUrl(currentImage)} alt="Offer preview" className="h-full w-full object-contain" />
+                </div>
+              ) : null}
+              <p className="mt-2 text-[10px] font-semibold text-zinc-400">Recommended artwork ratio: 4:5. The complete image will remain visible in the app.</p>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
@@ -336,6 +357,7 @@ export default function OffersPage() {
                         </p>
                       )}
                       {offer.phoneNumber && <p className="mt-1 text-[10px] font-black text-brandBlue">Call: {offer.phoneNumber}</p>}
+                      {offer.whatsappNumber && <p className="mt-1 text-[10px] font-black text-emerald-600">WhatsApp: {offer.whatsappNumber}</p>}
                     </div>
                     <div className="flex gap-2">
                       <button
