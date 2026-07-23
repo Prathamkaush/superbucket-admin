@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ImagePlus, Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ImagePlus, Plus, Save, Trash2 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
+import { ApiErrorDetails, getApiErrorDetails } from "@/lib/api-error";
 
 type Option = { name: string; value: string };
 type Specification = { name: string; value: string };
@@ -47,6 +48,7 @@ export default function CommerceProductForm({
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<ApiErrorDetails | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [subtypes, setSubtypes] = useState<any[]>([]);
@@ -205,6 +207,8 @@ export default function CommerceProductForm({
   };
 
   const submit = async () => {
+    setSaveError(null);
+
     const cleanVariants = variants
       .map((variant, index) => {
         const attributes = variant.options.filter(
@@ -228,11 +232,20 @@ export default function CommerceProductForm({
       .filter((variant) => variant.name && Number.isFinite(variant.price));
 
     if (!title.trim() || !categoryId) {
-      alert("Product name and category are required");
+      setSaveError({
+        title: "Required product details are missing",
+        message: "Enter a product name and select a category.",
+        details: [],
+      });
       return;
     }
     if (!cleanVariants.length) {
-      alert("Add at least one variant with a name or option and selling price");
+      setSaveError({
+        title: "A sellable variant is required",
+        message:
+          "Add at least one variant with a name or option and a valid selling price.",
+        details: [],
+      });
       return;
     }
 
@@ -275,7 +288,15 @@ export default function CommerceProductForm({
       }
       router.push("/products");
     } catch (error: any) {
-      alert(error.response?.data?.message || "Unable to save product");
+      const details = getApiErrorDetails(error);
+      console.error("Product submission failed", {
+        status: details.status,
+        reference: details.reference,
+        response: error.response?.data,
+        error,
+      });
+      setSaveError(details);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -289,7 +310,7 @@ export default function CommerceProductForm({
             <ArrowLeft size={18} />
           </button>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-brandRed">Superbucket Catalog</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-brandRed">IntiSeva Catalog</p>
             <h1 className="text-2xl font-black">{mode === "edit" ? "Edit Product" : "Create Product"}</h1>
             <p className="text-sm text-zinc-400">Groceries, electronics, fashion, footwear and more.</p>
           </div>
@@ -298,6 +319,34 @@ export default function CommerceProductForm({
           <Save size={16} /> {saving ? "Saving..." : "Save Product"}
         </button>
       </div>
+
+      {saveError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-500/40 bg-red-950/40 p-4 text-red-100"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 shrink-0 text-red-400" size={20} />
+            <div>
+              <p className="font-bold">{saveError.title}</p>
+              <p className="mt-1 text-sm text-red-100/90">{saveError.message}</p>
+              {saveError.details.length ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-100/80">
+                  {saveError.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-red-200/70">
+                {saveError.status ? <span>HTTP status: {saveError.status}</span> : null}
+                {saveError.reference ? (
+                  <span>Support reference: {saveError.reference}</span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-8">

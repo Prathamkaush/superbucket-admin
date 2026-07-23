@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Superbucket Admin",
-  description: "Superbucket commerce management dashboard",
+  title: "IntiSeva Admin",
+  description: "IntiSeva commerce management dashboard",
 };
 
 export default function RootLayout({

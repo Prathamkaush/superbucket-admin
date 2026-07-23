@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  AlertTriangle,
   BadgeCheck,
   ImagePlus,
   Plus,
@@ -11,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { ApiErrorDetails, getApiErrorDetails } from "@/lib/api-error";
 
 type Variant = {
   sku: string;
@@ -75,6 +77,7 @@ export default function SupplementProductForm({
 const isHydrating = useRef(false);
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<ApiErrorDetails | null>(null);
 
   const [categories, setCategories] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
@@ -83,7 +86,7 @@ const isHydrating = useRef(false);
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [brandName, setBrandName] = useState("Superbucket");
+  const [brandName, setBrandName] = useState("IntiSeva");
   const [productLine, setProductLine] = useState("");
   const [goal, setGoal] = useState("");
   const [dietaryPreference, setDietaryPreference] = useState("");
@@ -113,9 +116,9 @@ const isHydrating = useRef(false);
   const [countryOfOrigin, setCountryOfOrigin] = useState("India");
   const [marketedBy, setMarketedBy] = useState("");
   const [manufacturedBy, setManufacturedBy] = useState("");
-  const [sellerName, setSellerName] = useState("Superbucket");
+  const [sellerName, setSellerName] = useState("IntiSeva");
   const [authenticityNote, setAuthenticityNote] = useState(
-    "Scan or verify the product code before use. Buy only from authorized Superbucket channels.",
+    "Scan or verify the product code before use. Buy only from authorized IntiSeva channels.",
   );
   const [returnPolicy, setReturnPolicy] = useState(
     "Returns accepted only for damaged, incorrect, or sealed unused products as per policy.",
@@ -189,7 +192,7 @@ const isHydrating = useRef(false);
     setTitle(initialProduct.title || "");
     setShortDescription(initialProduct.shortDescription || "");
     setDescription(initialProduct.description || "");
-    setBrandName(initialProduct.brandName || "Superbucket");
+    setBrandName(initialProduct.brandName || "IntiSeva");
     setProductLine(initialProduct.productLine || "");
     setGoal(initialProduct.goal || "");
     setDietaryPreference(initialProduct.dietaryPreference || "");
@@ -253,7 +256,7 @@ const isHydrating = useRef(false);
     setCountryOfOrigin(initialProduct.countryOfOrigin || "India");
     setMarketedBy(initialProduct.marketedBy || "");
     setManufacturedBy(initialProduct.manufacturedBy || "");
-    setSellerName(initialProduct.sellerName || "Superbucket");
+    setSellerName(initialProduct.sellerName || "IntiSeva");
     setAuthenticityNote(initialProduct.authenticityNote || "");
     setReturnPolicy(initialProduct.returnPolicy || "");
     setKeyBenefitsText(
@@ -365,8 +368,14 @@ const isHydrating = useRef(false);
   };
 
   const submit = async () => {
-    if (!title || !categoryId) {
-      alert("Product name and category are required");
+    setSaveError(null);
+
+    if (!title.trim() || !categoryId) {
+      setSaveError({
+        title: "Required product details are missing",
+        message: "Enter a product name and select a category.",
+        details: [],
+      });
       return;
     }
 
@@ -383,7 +392,12 @@ const isHydrating = useRef(false);
       }));
 
     if (!cleanVariants.length) {
-      alert("Add at least one sellable variant with weight and price");
+      setSaveError({
+        title: "A sellable variant is required",
+        message:
+          "Add at least one variant with a pack weight and a valid selling price.",
+        details: [],
+      });
       return;
     }
 
@@ -459,8 +473,15 @@ const isHydrating = useRef(false);
       else await api.post("/products", fd);
       router.push("/products");
     } catch (err: any) {
-      console.error(err.response?.data || err.message);
-      alert(err.response?.data?.message || "Unable to save product");
+      const details = getApiErrorDetails(err);
+      console.error("Product submission failed", {
+        status: details.status,
+        reference: details.reference,
+        response: err.response?.data,
+        error: err,
+      });
+      setSaveError(details);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -474,6 +495,34 @@ const isHydrating = useRef(false);
       onSave={submit}
       saving={saving}
     >
+      {saveError ? (
+        <div
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-red-950"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 shrink-0 text-red-600" size={20} />
+            <div>
+              <p className="font-bold">{saveError.title}</p>
+              <p className="mt-1 text-sm text-red-900/80">{saveError.message}</p>
+              {saveError.details.length ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-900/75">
+                  {saveError.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-red-800/60">
+                {saveError.status ? <span>HTTP status: {saveError.status}</span> : null}
+                {saveError.reference ? (
+                  <span>Support reference: {saveError.reference}</span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-8 space-y-6">
           <Section title="Product Identity">
@@ -1021,7 +1070,7 @@ function AdminLayoutShell({
           </button>
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-brandRed px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-              <BadgeCheck size={14} /> Superbucket Catalog
+              <BadgeCheck size={14} /> IntiSeva Catalog
             </div>
             <h1 className="text-2xl font-black uppercase tracking-tight md:text-3xl">
               {title}

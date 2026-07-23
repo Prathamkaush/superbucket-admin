@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
               <label className="admin-label mb-2 block">Email</label>
               <input
                 type="email"
-                placeholder="admin@superbucket.com"
+                placeholder="admin@intiseva.com"
                 className="admin-field px-4 py-3"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -123,7 +123,7 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="mt-8 flex items-center justify-between border-t border-blue-100 pt-5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-            <span>Superbucket Admin</span>
+            <span>IntiSeva Admin</span>
             <span>{new Date().getFullYear()}</span>
           </div>
         </section>

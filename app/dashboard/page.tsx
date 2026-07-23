@@ -73,7 +73,7 @@ export default function DashboardPage() {
             S
           </div>
           <div className="relative max-w-3xl">
-            <p className="admin-page-kicker">Superbucket Control Room</p>
+            <p className="admin-page-kicker">IntiSeva Control Room</p>
             <h1 className="mt-2 text-3xl font-black uppercase tracking-tight text-brandBlack md:text-4xl">Admin Dashboard</h1>
             <p className="mt-2 text-sm text-slate-500">
               Track revenue, orders, customers, product stock, and catalog health.

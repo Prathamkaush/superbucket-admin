@@ -147,7 +147,7 @@ export default function Sidebar() {
             <ShieldCheck size={18} className="text-brandRed" />
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-brandBlack">Admin Secure</p>
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Superbucket</p>
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">IntiSeva</p>
             </div>
           </div>
           <button
