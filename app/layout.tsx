@@ -3,6 +3,11 @@ import "./globals.css";
 export const metadata = {
   title: "IntiSeva Admin",
   description: "IntiSeva commerce management dashboard",
+  icons: {
+    icon: "/intiseva-app-icon.png",
+    shortcut: "/intiseva-app-icon.png",
+    apple: "/intiseva-app-icon.png",
+  },
 };
 
 export default function RootLayout({

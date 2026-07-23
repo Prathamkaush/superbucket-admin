@@ -12,12 +12,14 @@ export default function BrandMark({
       <img
         src="/intiseva-logo.png"
         alt="IntiSeva"
-        className={`${compact ? "h-10 w-10" : "h-14 w-14"} shrink-0 object-contain`}
+        className={`${
+          compact ? "h-12 w-12" : "h-20 w-28"
+        } shrink-0 object-contain`}
       />
       {!compact && (
         <div className="leading-none">
-          <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.28em] text-slate-500">
-            IntiSeva Admin
+          <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-500">
+            Admin Panel
           </p>
         </div>
       )}
